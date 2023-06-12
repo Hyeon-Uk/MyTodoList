@@ -1,6 +1,6 @@
 # MyTodoList Repository
 
-### 📝[기능/비기능 요구사항 정리]()
+### 📝[기능/비기능 요구사항 정리](https://github.com/Hyeon-Uk/MyTodoList/blob/main/Requirements.md)
 ### 📗[ERD]()
 ### ⏰[Sequence Diagram]()
 
