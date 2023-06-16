@@ -1,12 +1,14 @@
 package com.hyeonuk.todo.member.service;
 
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
+import com.hyeonuk.todo.integ.exception.ValidationException;
 import com.hyeonuk.todo.member.dto.SaveDTO;
 import com.hyeonuk.todo.member.entity.Member;
 import com.hyeonuk.todo.member.exception.SaveException;
 
+
 public interface MemberAuthService {
-    SaveDTO.Response save(SaveDTO.Request dto) throws SaveException, AlreadyExistException;
+    SaveDTO.Response save(SaveDTO.Request dto) throws SaveException, AlreadyExistException, ValidationException;
 
     default SaveDTO.Response entityToSaveDTO(Member member){
         return SaveDTO.Response.builder()

@@ -1,0 +1,7 @@
+package com.hyeonuk.todo.integ.exception;
+
+public class ValidationException extends Exception{
+    public ValidationException(String message) {
+        super(message);
+    }
+}

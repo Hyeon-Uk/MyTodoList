@@ -37,3 +37,4 @@ out/
 .vscode/
 /gradle/
 /src/main/resources/application-db.properties
+/src/main/resources/application-jwt.properties

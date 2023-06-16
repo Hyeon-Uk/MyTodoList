@@ -16,8 +16,6 @@ public class SaveDTO {//세이브 할 떄 필요한 request, response
         private String passwordCheck;//비밀번호 체크
         private String name;//이름
         private boolean agree;//약관 동의
-
-        private String address;
     }
 
     @Builder
