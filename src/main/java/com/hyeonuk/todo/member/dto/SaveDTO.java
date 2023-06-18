@@ -16,6 +16,25 @@ public class SaveDTO {//세이브 할 떄 필요한 request, response
         private String passwordCheck;//비밀번호 체크
         private String name;//이름
         private boolean agree;//약관 동의
+
+        //입력시 좌우 공백을 제거해주기 위함
+        public void setId(String id) {
+            if(id != null) {
+                this.id = id.trim();
+            }
+        }
+
+        public void setEmail(String email) {
+            if(email != null) {
+                this.email = email.trim();
+            }
+        }
+
+        public void setName(String name) {
+            if(name != null) {
+                this.name = name.trim();
+            }
+        }
     }
 
     @Builder
