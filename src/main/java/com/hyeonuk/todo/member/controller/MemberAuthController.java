@@ -2,14 +2,19 @@ package com.hyeonuk.todo.member.controller;
 
 import com.hyeonuk.todo.integ.dto.ErrorMessageDTO;
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
+import com.hyeonuk.todo.integ.exception.UserInfoNotFoundException;
 import com.hyeonuk.todo.integ.exception.ValidationException;
+import com.hyeonuk.todo.member.dto.LoginDTO;
 import com.hyeonuk.todo.member.dto.SaveDTO;
+import com.hyeonuk.todo.member.exception.LoginException;
 import com.hyeonuk.todo.member.exception.SaveException;
 import com.hyeonuk.todo.member.service.MemberAuthService;
+import com.hyeonuk.todo.security.service.CustomUserDetail;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,6 +23,15 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class MemberAuthController {
     private final MemberAuthService memberAuthService;
+
+    @PostMapping(value = "/login",produces = "application/json;charset=utf-8",consumes = "application/json;charset=utf-8")
+    public ResponseEntity<LoginDTO.Response> login(@RequestBody LoginDTO.Request dto) throws LoginException, UserInfoNotFoundException,ValidationException {
+        try {
+            return new ResponseEntity<>(memberAuthService.login(dto), HttpStatus.OK);
+        }catch(UserInfoNotFoundException | ValidationException | LoginException e){
+            throw e;
+        }
+    }
 
     @PostMapping("/regist")
     public ResponseEntity<SaveDTO.Response> regist(@RequestBody SaveDTO.Request dto) throws AlreadyExistException,ValidationException,SaveException{
@@ -31,10 +45,18 @@ public class MemberAuthController {
     }
 
     @ExceptionHandler({AlreadyExistException.class,ValidationException.class,SaveException.class})
-    public ResponseEntity<ErrorMessageDTO> saveExceptionHandler(Exception e){
+    public ResponseEntity<ErrorMessageDTO> badRequestErrorHandler(Exception e){
         return new ResponseEntity<>(ErrorMessageDTO.builder()
                 .message(e.getMessage())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .build(),HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({LoginException.class,UserInfoNotFoundException.class})
+    public ResponseEntity<ErrorMessageDTO> unauthorizedErrorHandler(Exception e){
+        return new ResponseEntity<>(ErrorMessageDTO.builder()
+                .message(e.getMessage())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .build(),HttpStatus.UNAUTHORIZED);
     }
 }
