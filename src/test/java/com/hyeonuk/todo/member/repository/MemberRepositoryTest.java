@@ -1,23 +1,26 @@
 package com.hyeonuk.todo.member.repository;
 
+import com.hyeonuk.todo.MyTodoListApplication;
 import com.hyeonuk.todo.integ.data.MEMBER_MAX_LENGTH;
 import com.hyeonuk.todo.member.entity.Member;
-import com.hyeonuk.todo.member.service.MemberAuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
@@ -38,11 +41,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *
  * update
  *  - 성공테스트
- *      - tryCount 업데이트
- *      - blockedTime 업데이트
- *      - 업데이트 후 updated_at 체크
+ *      - 이름 변경 테스트, 중복 가능v
+ *      - 이메일 변경 테스트v
+ *      - 비밀번호 변경 테스트v
+ *      - tryCount 업데이트v
+ *      - blockedTime 업데이트v
+ *      - 업데이트 후 updated_at 체크v
  *  - 실패테스트
- *    - 변경 이메일 중복
+ *      - 변경 이메일 중복v
  *
  * findByEmail
  *  - 성공테스트
@@ -50,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 
 @DataJpaTest
+@Import(MyTodoListApplication.class)
 class MemberRepositoryTest {
     @Autowired
     private MemberRepository memberRepository;
@@ -69,7 +76,7 @@ class MemberRepositoryTest {
             memberList.add(member);
         });
 
-        memberRepository.saveAll(memberList);
+        memberRepository.saveAllAndFlush(memberList);
     }
 
     @Nested
@@ -313,5 +320,218 @@ class MemberRepositoryTest {
             }
         }
     }
+    /**
+     * update
+     *  - 성공테스트
+     *      - 이름 변경 테스트, 중복 가능 v
+     *      - 이메일 변경 테스트 v
+     *      - 비밀번호 변경 테스트 v
+     *      - tryCount 업데이트 v
+     *      - blockedTime 업데이트 v
+     *      - 업데이트 후 updated_at 체크 v
+     *  - 실패테스트
+     *      - 변경 이메일 중복v
+     */
+    @Nested
+    @DisplayName("update test")
+    public class UpdateTest{
+        @Nested
+        @DisplayName("success")
+        public class Success{
+            @Test
+            @DisplayName("이름 변경 테스트, 중복 가능")
+            public void nameUpdateTest(){
+                //given
+                String targetId = memberList.get(0).getId();
+                Member target = memberRepository.findById(targetId).get();
+                LocalDateTime beforeUpdate = target.getUpdatedAt();
+                String changeName = memberList.get(1).getName();
 
+
+                //when
+                Member saved = Member.builder()
+                        .name(changeName)
+                        .id(target.getId())
+                        .password(target.getPassword())
+                        .email(target.getEmail())
+                        .roles(target.getRoles())
+                        .tryCount(target.getTryCount())
+                        .blockedTime(target.getBlockedTime())
+                        .build();
+
+                memberRepository.saveAndFlush(saved);
+                Member member = memberRepository.findById(targetId).get();
+                //then
+                assertAll("member update assert",
+                        ()->assertThat(member.getName()).isEqualTo(changeName),
+                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
+                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+            }
+
+            @Test
+            @DisplayName("이메일 변경 테스트")
+            public void emailUpdateTest(){
+                //given
+                String targetId = memberList.get(0).getId();
+                Member target = memberRepository.findById(targetId).get();
+                LocalDateTime beforeUpdate = target.getUpdatedAt();
+                String changeEmail = "changeEmail@notExist.com";
+
+
+                //when
+                Member saved = Member.builder()
+                        .name(target.getName())
+                        .id(target.getId())
+                        .password(target.getPassword())
+                        .email(changeEmail)
+                        .roles(target.getRoles())
+                        .tryCount(target.getTryCount())
+                        .blockedTime(target.getBlockedTime())
+                        .build();
+
+                memberRepository.saveAndFlush(saved);
+                Member member = memberRepository.findById(targetId).get();
+                //then
+                assertAll("member update assert",
+                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
+                        ()->assertThat(member.getEmail()).isEqualTo(changeEmail),
+                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
+                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+            }
+
+            @Test
+            @DisplayName("비밀번호 변경 테스트")
+            public void passwordUpdateTest(){
+                //given
+                String targetId = memberList.get(0).getId();
+                Member target = memberRepository.findById(targetId).get();
+                LocalDateTime beforeUpdate = target.getUpdatedAt();
+                String changePassword = "changeEmail@notExist.com";
+
+
+                //when
+                Member saved = Member.builder()
+                        .name(target.getName())
+                        .id(target.getId())
+                        .password(changePassword)
+                        .email(target.getEmail())
+                        .roles(target.getRoles())
+                        .tryCount(target.getTryCount())
+                        .blockedTime(target.getBlockedTime())
+                        .build();
+
+                memberRepository.saveAndFlush(saved);
+                Member member = memberRepository.findById(targetId).get();
+                //then
+                assertAll("member update assert",
+                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
+                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
+                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        ()->assertThat(member.getPassword()).isEqualTo(changePassword),
+                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+            }
+
+            @Test
+            @DisplayName("tryCount 변경 테스트")
+            public void tryCountUpdateTest(){
+                //given
+                String targetId = memberList.get(0).getId();
+                Member target = memberRepository.findById(targetId).get();
+                LocalDateTime beforeUpdate = target.getUpdatedAt();
+
+
+                //when
+
+                Member saved = Member.builder()
+                        .name(target.getName())
+                        .id(target.getId())
+                        .password(target.getPassword())
+                        .email(target.getEmail())
+                        .roles(target.getRoles())
+                        .tryCount(target.getTryCount()+1)
+                        .blockedTime(target.getBlockedTime())
+                        .build();
+
+                memberRepository.saveAndFlush(saved);
+                Member member = memberRepository.findById(targetId).get();
+                //then
+                assertAll("member update assert",
+                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
+                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
+                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        ()->assertThat(member.getTryCount()).isEqualTo(target.getTryCount()+1),
+                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+            }
+
+            @Test
+            @DisplayName("blockedTime 업데이트")
+            public void blockedTimeUpdateTest(){
+                //given
+                String targetId = memberList.get(0).getId();
+                Member target = memberRepository.findById(targetId).get();
+                LocalDateTime beforeUpdate = target.getUpdatedAt();
+
+
+                //when
+                LocalDateTime nowDateTime = LocalDateTime.now();
+                Member saved = Member.builder()
+                        .name(target.getName())
+                        .id(target.getId())
+                        .password(target.getPassword())
+                        .email(target.getEmail())
+                        .roles(target.getRoles())
+                        .tryCount(target.getTryCount())
+                        .blockedTime(nowDateTime.plusSeconds(60*3))
+                        .build();
+
+                memberRepository.saveAndFlush(saved);
+                Member member = memberRepository.findById(targetId).get();
+
+                //then
+                assertAll("member update assert",
+                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
+                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
+                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        ()->assertThat(member.getTryCount()).isEqualTo(target.getTryCount()),
+                        ()->assertThat(Duration.between(nowDateTime,member.getBlockedTime()).getSeconds()).isEqualTo(60*3),
+                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+            }
+        }
+
+        @Nested
+        @DisplayName("fail")
+        public class Fail{
+            @Test
+            @DisplayName("변경 이메일 중복")
+            public void emailDuplicateTest(){
+                Member target = memberList.get(0);
+                String changeEmail = memberList.get(1).getEmail();//중복되는 이메일 가져오기
+
+                Member save = Member.builder()
+                        .id(target.getId())
+                        .name(target.getName())
+                        .email(changeEmail)
+                        .password(target.getPassword())
+                        .img(target.getImg())
+                        .tryCount(target.getTryCount())
+                        .blockedTime(target.getBlockedTime())
+                        .roles(target.getRoles())
+                        .build();
+
+                assertThrows(DataIntegrityViolationException.class,()->{
+                   memberRepository.saveAndFlush(save);
+                });
+            }
+        }
+    }
 }
