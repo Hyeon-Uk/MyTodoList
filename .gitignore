@@ -36,7 +36,5 @@ out/
 ### VS Code ###
 .vscode/
 /gradle/
-/src/main/resources/application-db.properties
-/src/main/resources/application-jwt.properties
-/src/test/resources/application-db.properties
-/src/test/resources/application-jwt.properties
+/src/test/resources/application-*.properties
+/src/main/resources/application-*.properties
