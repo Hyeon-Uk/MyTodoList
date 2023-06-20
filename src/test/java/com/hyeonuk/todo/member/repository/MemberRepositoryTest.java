@@ -17,43 +17,12 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-
-/**
- * 체크해야할것
- * save
- *  - 성공테스트 v
- *  - 실패 테스트
- *      - 이메일 중복 검사 v
- *      - 아이디 null v
- *      - 비밀번호 null v
- *      - 이름 null v
- *      - 아이디 길이 초과 v
- *      - 이메일 길이 초과 v
- *      - 비밀번호 길이 초과 v
- *      - 이미지 길이 초과 v
- *      - 설명 길이 초과 v
- *
- * update
- *  - 성공테스트
- *      - 이름 변경 테스트, 중복 가능v
- *      - 이메일 변경 테스트v
- *      - 비밀번호 변경 테스트v
- *      - tryCount 업데이트v
- *      - blockedTime 업데이트v
- *      - 업데이트 후 updated_at 체크v
- *  - 실패테스트
- *      - 변경 이메일 중복v
- *
- * findByEmail
- *  - 성공테스트
- *  - 존재하지 않는 테스트
- */
 
 @DataJpaTest
 @Import(MyTodoListApplication.class)
@@ -65,8 +34,8 @@ class MemberRepositoryTest {
 
 
     @BeforeEach
-    public void insertDummies(){
-        IntStream.rangeClosed(1,200).forEach(i->{
+    public void insertDummies() {
+        IntStream.rangeClosed(1, 200).forEach(i -> {
             Member member = Member.builder()
                     .id("Tester".concat(Integer.toString(i)))
                     .email("tester".concat(Integer.toString(i)).concat("@gmail.com"))
@@ -79,15 +48,29 @@ class MemberRepositoryTest {
         memberRepository.saveAllAndFlush(memberList);
     }
 
+    /**
+     * save
+     * - 성공테스트 v
+     * - 실패 테스트
+     * - 이메일 중복 검사 v
+     * - 아이디 null v
+     * - 비밀번호 null v
+     * - 이름 null v
+     * - 아이디 길이 초과 v
+     * - 이메일 길이 초과 v
+     * - 비밀번호 길이 초과 v
+     * - 이미지 길이 초과 v
+     * - 설명 길이 초과 v
+     */
     @Nested
     @DisplayName("save test")//세이브를 테스트할 클래스
-    public class SaveTest{
+    public class SaveTest {
         @Nested
         @DisplayName("success")
-        public class Success{
+        public class Success {
             @Test
             @DisplayName("success")
-            public void saveSuccess(){
+            public void saveSuccess() {
                 long beforeCount = memberRepository.findAll().size();
 
                 //given
@@ -104,7 +87,7 @@ class MemberRepositoryTest {
 
                 //then
                 long afterCount = memberRepository.findAll().size();
-                assertThat(afterCount-beforeCount).isEqualTo(1);
+                assertThat(afterCount - beforeCount).isEqualTo(1);
 
                 //member 엔티티 체크
                 assertThat(saved.getId()).isEqualTo(member.getId());
@@ -123,10 +106,10 @@ class MemberRepositoryTest {
 
         @Nested
         @DisplayName("fail")
-        public class Fail{
+        public class Fail {
             @Test
             @DisplayName("이메일 중복")
-            public void duplicatedId(){
+            public void duplicatedId() {
                 //given
                 String alreadyUserEmail = memberList.get(0).getEmail();
                 Member duplicatedMember = Member.builder()
@@ -137,14 +120,14 @@ class MemberRepositoryTest {
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
-                   memberRepository.saveAndFlush(duplicatedMember);
+                assertThrows(DataIntegrityViolationException.class, () -> {
+                    memberRepository.saveAndFlush(duplicatedMember);
                 });
             }
 
             @Test
             @DisplayName("id null")
-            public void idNull(){
+            public void idNull() {
                 //given
                 Member member = Member.builder()
                         .email("email@gmail.com")
@@ -153,14 +136,14 @@ class MemberRepositoryTest {
                         .build();
 
                 //when & then
-                assertThrows(JpaSystemException.class,()->{
+                assertThrows(JpaSystemException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("email null")
-            public void emailNull(){
+            public void emailNull() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
@@ -169,14 +152,14 @@ class MemberRepositoryTest {
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("password null")
-            public void pwNull(){
+            public void pwNull() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
@@ -185,14 +168,14 @@ class MemberRepositoryTest {
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("name null")
-            public void nameNull(){
+            public void nameNull() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
@@ -201,15 +184,15 @@ class MemberRepositoryTest {
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             //해당 길이만큼의 더미 스트링을 반환해주는 메서드
-            private String makeLengthString(int length){
+            private String makeLengthString(int length) {
                 StringBuilder sb = new StringBuilder();
-                for(int i=0;i<length;i++){
+                for (int i = 0; i < length; i++) {
                     sb.append('1');
                 }
                 return sb.toString();
@@ -217,130 +200,131 @@ class MemberRepositoryTest {
 
             @Test
             @DisplayName("아이디 길이 초과")
-            public void longId(){
+            public void longId() {
                 //given
                 Member member = Member.builder()
-                        .id(makeLengthString(MEMBER_MAX_LENGTH.ID.getValue()+1))
+                        .id(makeLengthString(MEMBER_MAX_LENGTH.ID.getValue() + 1))
                         .email("email@gmail.com")
                         .password("1111")
                         .name("hyeonuk")
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
-                   memberRepository.saveAndFlush(member);
+                assertThrows(DataIntegrityViolationException.class, () -> {
+                    memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("이메일 길이 초과")
-            public void longEmail(){
+            public void longEmail() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
-                        .email(makeLengthString(MEMBER_MAX_LENGTH.EMAIL.getValue()+1))
+                        .email(makeLengthString(MEMBER_MAX_LENGTH.EMAIL.getValue() + 1))
                         .password("1111")
                         .name("hyeonuk")
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("비밀번호 길이 초과")
-            public void longPassword(){
+            public void longPassword() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
                         .email("email@gmail.com")
-                        .password(makeLengthString(MEMBER_MAX_LENGTH.PASSWORD.getValue()+1))
+                        .password(makeLengthString(MEMBER_MAX_LENGTH.PASSWORD.getValue() + 1))
                         .name("hyeonuk")
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("이름 길이 초과")
-            public void longName(){
+            public void longName() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
                         .email("email@gmail.com")
                         .password("1111")
-                        .name(makeLengthString(MEMBER_MAX_LENGTH.NAME.getValue())+1)
+                        .name(makeLengthString(MEMBER_MAX_LENGTH.NAME.getValue()) + 1)
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("이미지 길이 초과")
-            public void longImg(){
+            public void longImg() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
                         .email("email@gmail.com")
                         .password("1111")
                         .name("hyeonuk")
-                        .img(makeLengthString(MEMBER_MAX_LENGTH.IMG.getValue()+1))
+                        .img(makeLengthString(MEMBER_MAX_LENGTH.IMG.getValue() + 1))
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
 
             @Test
             @DisplayName("설명 길이 초과")
-            public void longDesc(){
+            public void longDesc() {
                 //given
                 Member member = Member.builder()
                         .id("notExistUserId")
                         .email("email@gmail.com")
                         .password("1111")
                         .name("hyeonuk")
-                        .description(makeLengthString(MEMBER_MAX_LENGTH.DESC.getValue()+1))
+                        .description(makeLengthString(MEMBER_MAX_LENGTH.DESC.getValue() + 1))
                         .build();
 
                 //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
+                assertThrows(DataIntegrityViolationException.class, () -> {
                     memberRepository.saveAndFlush(member);
                 });
             }
         }
     }
+
     /**
      * update
-     *  - 성공테스트
-     *      - 이름 변경 테스트, 중복 가능 v
-     *      - 이메일 변경 테스트 v
-     *      - 비밀번호 변경 테스트 v
-     *      - tryCount 업데이트 v
-     *      - blockedTime 업데이트 v
-     *      - 업데이트 후 updated_at 체크 v
-     *  - 실패테스트
-     *      - 변경 이메일 중복v
+     * - 성공테스트
+     * - 이름 변경 테스트, 중복 가능 v
+     * - 이메일 변경 테스트 v
+     * - 비밀번호 변경 테스트 v
+     * - tryCount 업데이트 v
+     * - blockedTime 업데이트 v
+     * - 업데이트 후 updated_at 체크 v
+     * - 실패테스트
+     * - 변경 이메일 중복v
      */
     @Nested
     @DisplayName("update test")
-    public class UpdateTest{
+    public class UpdateTest {
         @Nested
         @DisplayName("success")
-        public class Success{
+        public class Success {
             @Test
             @DisplayName("이름 변경 테스트, 중복 가능")
-            public void nameUpdateTest(){
+            public void nameUpdateTest() {
                 //given
                 String targetId = memberList.get(0).getId();
                 Member target = memberRepository.findById(targetId).get();
@@ -363,17 +347,17 @@ class MemberRepositoryTest {
                 Member member = memberRepository.findById(targetId).get();
                 //then
                 assertAll("member update assert",
-                        ()->assertThat(member.getName()).isEqualTo(changeName),
-                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
-                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
-                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
-                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
-                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+                        () -> assertThat(member.getName()).isEqualTo(changeName),
+                        () -> assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        () -> assertThat(member.getId()).isEqualTo(target.getId()),
+                        () -> assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        () -> assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        () -> assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
             }
 
             @Test
             @DisplayName("이메일 변경 테스트")
-            public void emailUpdateTest(){
+            public void emailUpdateTest() {
                 //given
                 String targetId = memberList.get(0).getId();
                 Member target = memberRepository.findById(targetId).get();
@@ -396,17 +380,17 @@ class MemberRepositoryTest {
                 Member member = memberRepository.findById(targetId).get();
                 //then
                 assertAll("member update assert",
-                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
-                        ()->assertThat(member.getEmail()).isEqualTo(changeEmail),
-                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
-                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
-                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
-                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+                        () -> assertThat(member.getName()).isEqualTo(target.getName()),
+                        () -> assertThat(member.getEmail()).isEqualTo(changeEmail),
+                        () -> assertThat(member.getId()).isEqualTo(target.getId()),
+                        () -> assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        () -> assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        () -> assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
             }
 
             @Test
             @DisplayName("비밀번호 변경 테스트")
-            public void passwordUpdateTest(){
+            public void passwordUpdateTest() {
                 //given
                 String targetId = memberList.get(0).getId();
                 Member target = memberRepository.findById(targetId).get();
@@ -429,23 +413,22 @@ class MemberRepositoryTest {
                 Member member = memberRepository.findById(targetId).get();
                 //then
                 assertAll("member update assert",
-                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
-                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
-                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
-                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
-                        ()->assertThat(member.getPassword()).isEqualTo(changePassword),
-                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+                        () -> assertThat(member.getName()).isEqualTo(target.getName()),
+                        () -> assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        () -> assertThat(member.getId()).isEqualTo(target.getId()),
+                        () -> assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        () -> assertThat(member.getPassword()).isEqualTo(changePassword),
+                        () -> assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
             }
 
             @Test
             @DisplayName("tryCount 변경 테스트")
-            public void tryCountUpdateTest(){
+            public void tryCountUpdateTest() {
                 //given
                 String targetId = memberList.get(0).getId();
                 Member target = memberRepository.findById(targetId).get();
                 LocalDateTime beforeUpdate = target.getUpdatedAt();
-
-
+                int beforeTryCount = target.getTryCount();
                 //when
 
                 Member saved = Member.builder()
@@ -454,26 +437,27 @@ class MemberRepositoryTest {
                         .password(target.getPassword())
                         .email(target.getEmail())
                         .roles(target.getRoles())
-                        .tryCount(target.getTryCount()+1)
+                        .tryCount(target.getTryCount() + 1)
                         .blockedTime(target.getBlockedTime())
                         .build();
 
                 memberRepository.saveAndFlush(saved);
                 Member member = memberRepository.findById(targetId).get();
+
                 //then
                 assertAll("member update assert",
-                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
-                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
-                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
-                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
-                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
-                        ()->assertThat(member.getTryCount()).isEqualTo(target.getTryCount()+1),
-                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+                        () -> assertThat(member.getName()).isEqualTo(target.getName()),
+                        () -> assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        () -> assertThat(member.getId()).isEqualTo(target.getId()),
+                        () -> assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        () -> assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        () -> assertThat(member.getTryCount()).isEqualTo(beforeTryCount + 1),
+                        () -> assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
             }
 
             @Test
             @DisplayName("blockedTime 업데이트")
-            public void blockedTimeUpdateTest(){
+            public void blockedTimeUpdateTest() {
                 //given
                 String targetId = memberList.get(0).getId();
                 Member target = memberRepository.findById(targetId).get();
@@ -489,7 +473,7 @@ class MemberRepositoryTest {
                         .email(target.getEmail())
                         .roles(target.getRoles())
                         .tryCount(target.getTryCount())
-                        .blockedTime(nowDateTime.plusSeconds(60*3))
+                        .blockedTime(nowDateTime.plusSeconds(60 * 3))
                         .build();
 
                 memberRepository.saveAndFlush(saved);
@@ -497,23 +481,23 @@ class MemberRepositoryTest {
 
                 //then
                 assertAll("member update assert",
-                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
-                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
-                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
-                        ()->assertThat(member.getImg()).isEqualTo(target.getImg()),
-                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
-                        ()->assertThat(member.getTryCount()).isEqualTo(target.getTryCount()),
-                        ()->assertThat(Duration.between(nowDateTime,member.getBlockedTime()).getSeconds()).isEqualTo(60*3),
-                        ()->assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
+                        () -> assertThat(member.getName()).isEqualTo(target.getName()),
+                        () -> assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        () -> assertThat(member.getId()).isEqualTo(target.getId()),
+                        () -> assertThat(member.getImg()).isEqualTo(target.getImg()),
+                        () -> assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        () -> assertThat(member.getTryCount()).isEqualTo(target.getTryCount()),
+                        () -> assertThat(Duration.between(nowDateTime, member.getBlockedTime()).getSeconds()).isEqualTo(60 * 3),
+                        () -> assertThat(member.getUpdatedAt()).isNotEqualTo(beforeUpdate));
             }
         }
 
         @Nested
         @DisplayName("fail")
-        public class Fail{
+        public class Fail {
             @Test
             @DisplayName("변경 이메일 중복")
-            public void emailDuplicateTest(){
+            public void emailDuplicateTest() {
                 Member target = memberList.get(0);
                 String changeEmail = memberList.get(1).getEmail();//중복되는 이메일 가져오기
 
@@ -528,9 +512,59 @@ class MemberRepositoryTest {
                         .roles(target.getRoles())
                         .build();
 
-                assertThrows(DataIntegrityViolationException.class,()->{
-                   memberRepository.saveAndFlush(save);
+                assertThrows(DataIntegrityViolationException.class, () -> {
+                    memberRepository.saveAndFlush(save);
                 });
+            }
+        }
+    }
+
+    /**
+     * findByEmail
+     * - 성공테스트
+     *      - 이메일 찾기 성공 v
+     * - 실패테스트
+     *      - 없는 이메일 조회시 Optional.ofNullable(null) 반환 v
+     */
+    @Nested
+    @DisplayName("findByEmail")
+    public class findByEmailTest {
+        @Nested
+        @DisplayName("success")
+        public class Success{
+            @Test
+            @DisplayName("이메일 찾기 성공")
+            public void success(){
+                Member target = memberList.get(0);
+                String targetEmail = target.getEmail();
+
+                Optional<Member> result = memberRepository.findByEmail(targetEmail);
+
+                assertThat(result).isNotEmpty();
+
+                Member member = result.get();
+
+                assertAll("findByEmail",
+                        ()->assertThat(member.getEmail()).isEqualTo(target.getEmail()),
+                        ()->assertThat(member.getId()).isEqualTo(target.getId()),
+                        ()->assertThat(member.getPassword()).isEqualTo(target.getPassword()),
+                        ()->assertThat(member.getName()).isEqualTo(target.getName()),
+                        ()->assertThat(member.getTryCount()).isEqualTo(target.getTryCount()),
+                        ()->assertThat(member.getBlockedTime()).isEqualTo(target.getBlockedTime())
+                );
+            }
+        }
+        @Nested
+        @DisplayName("fail")
+        public class Fail{
+            @Test
+            @DisplayName("없는 이메일 조회시 Optional.ofNullable(null) 반환")
+            public void notExistEmailTest(){
+                String notExistEmail = "notExistUser@gmail.com";
+
+                Optional<Member> result = memberRepository.findByEmail(notExistEmail);
+
+                assertThat(result).isEmpty();
             }
         }
     }
