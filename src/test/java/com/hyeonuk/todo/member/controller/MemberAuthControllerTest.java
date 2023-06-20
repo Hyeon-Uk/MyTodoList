@@ -43,10 +43,8 @@ public class MemberAuthControllerTest {
     private JwtProvider jwtProvider;
 
     /**
-     * Login TODO
-     * 3회 3분 같은 policy관련 데이터를 properties파일에 옮기기
-     * 실패케이스 7번 해결하기
-     *
+     *  TODO
+     *   LOGIN
      *
      * <p>
      * 성공케이스
