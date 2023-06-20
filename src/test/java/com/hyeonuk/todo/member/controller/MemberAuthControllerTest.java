@@ -5,6 +5,7 @@ import com.hyeonuk.todo.integ.dto.ErrorMessageDTO;
 import com.hyeonuk.todo.integ.util.JwtProvider;
 import com.hyeonuk.todo.member.dto.LoginDTO;
 import com.hyeonuk.todo.member.dto.SaveDTO;
+import com.hyeonuk.todo.member.entity.Member;
 import com.hyeonuk.todo.member.repository.MemberRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,7 @@ public class MemberAuthControllerTest {
      * 성공케이스
      * 1. 정상적인 요청 후 accessToken의 값을 parsing한 뒤, 입력한 유저정보와 일치하는지 검사 v
      * 2. 정상적인 아이디 끝에 공백이 추가된 경우 -> 성공으로 간주 v
-     *
+     * <p>
      * 실패케이스
      * 1. 아이디가 공백인 경우 v
      * 2. 아이디가 null인 경우 v
@@ -109,12 +110,12 @@ public class MemberAuthControllerTest {
 
                 String responseData = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
 
-                LoginDTO.Response response = mapper.readValue(responseData,LoginDTO.Response.class);
+                LoginDTO.Response response = mapper.readValue(responseData, LoginDTO.Response.class);
 
                 //토큰의 id값이 같아야함
                 assertThat(jwtProvider.getId(response.getAccessToken())).isEqualTo(request.getId());
             }
-            
+
             @DisplayName("2. 정상적인 아이디 끝에 공백이 추가된 경우 -> 성공으로 간주")
             @Test
             public void successTest2() throws Exception {
@@ -135,7 +136,7 @@ public class MemberAuthControllerTest {
 
                 String responseData = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
 
-                LoginDTO.Response response = mapper.readValue(responseData,LoginDTO.Response.class);
+                LoginDTO.Response response = mapper.readValue(responseData, LoginDTO.Response.class);
 
                 //토큰의 id값이 같아야함
                 assertThat(jwtProvider.getId(response.getAccessToken())).isEqualTo(dummyId);
@@ -147,7 +148,7 @@ public class MemberAuthControllerTest {
         public class Fail {
             @DisplayName("1. 아이디가 공백인 경우")
             @Test
-            public void idBlankException() throws Exception{
+            public void idBlankException() throws Exception {
                 //given
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id("             ")
@@ -160,12 +161,12 @@ public class MemberAuthControllerTest {
                         //then
                         .andExpect(status().isBadRequest())
                         .andExpect(jsonPath("$.message", is("입력값을 다시 확인해주세요")))
-                        .andExpect(jsonPath("$.status",is(HttpStatus.BAD_REQUEST.value())));
+                        .andExpect(jsonPath("$.status", is(HttpStatus.BAD_REQUEST.value())));
             }
 
             @DisplayName("2. 아이디가 null인 경우")
             @Test
-            public void idNullException() throws Exception{
+            public void idNullException() throws Exception {
                 //given
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .password(dummyPassword)
@@ -177,12 +178,12 @@ public class MemberAuthControllerTest {
                         //then
                         .andExpect(status().isBadRequest())
                         .andExpect(jsonPath("$.message", is("입력값을 다시 확인해주세요")))
-                        .andExpect(jsonPath("$.status",is(HttpStatus.BAD_REQUEST.value())));
+                        .andExpect(jsonPath("$.status", is(HttpStatus.BAD_REQUEST.value())));
             }
 
             @DisplayName("3. 비밀번호가 공백인 경우")
             @Test
-            public void passwordBlankException() throws Exception{
+            public void passwordBlankException() throws Exception {
                 //given
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id(dummyId)
@@ -195,12 +196,12 @@ public class MemberAuthControllerTest {
                         //then
                         .andExpect(status().isBadRequest())
                         .andExpect(jsonPath("$.message", is("입력값을 다시 확인해주세요")))
-                        .andExpect(jsonPath("$.status",is(HttpStatus.BAD_REQUEST.value())));
+                        .andExpect(jsonPath("$.status", is(HttpStatus.BAD_REQUEST.value())));
             }
 
             @DisplayName("4. 비밀번호가 null인 경우")
             @Test
-            public void passwordNullException() throws Exception{
+            public void passwordNullException() throws Exception {
                 //given
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id(dummyId)
@@ -212,12 +213,12 @@ public class MemberAuthControllerTest {
                         //then
                         .andExpect(status().isBadRequest())
                         .andExpect(jsonPath("$.message", is("입력값을 다시 확인해주세요")))
-                        .andExpect(jsonPath("$.status",is(HttpStatus.BAD_REQUEST.value())));
+                        .andExpect(jsonPath("$.status", is(HttpStatus.BAD_REQUEST.value())));
             }
 
             @DisplayName("5. 아이디가 일치하지 않는 경우")
             @Test
-            public void idNotMatchesException() throws Exception{
+            public void idNotMatchesException() throws Exception {
                 //given
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id("unknownId")
@@ -230,12 +231,12 @@ public class MemberAuthControllerTest {
                         //then
                         .andExpect(status().isUnauthorized())
                         .andExpect(jsonPath("$.message", is("잘못된 인증정보 입니다.")))
-                        .andExpect(jsonPath("$.status",is(HttpStatus.UNAUTHORIZED.value())));
+                        .andExpect(jsonPath("$.status", is(HttpStatus.UNAUTHORIZED.value())));
             }
 
             @DisplayName("6. 아이디는 일치하지만, 비밀번호가 일치하지 않는 경우")
             @Test
-            public void idMatchesButPasswordNotMatchesException() throws Exception{
+            public void idMatchesButPasswordNotMatchesException() throws Exception {
                 //given
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id(dummyId)
@@ -248,12 +249,13 @@ public class MemberAuthControllerTest {
                         //then
                         .andExpect(status().isUnauthorized())
                         .andExpect(jsonPath("$.message", is("잘못된 인증정보 입니다.")))
-                        .andExpect(jsonPath("$.status",is(HttpStatus.UNAUTHORIZED.value())));
+                        .andExpect(jsonPath("$.status", is(HttpStatus.UNAUTHORIZED.value())));
             }
 
             @DisplayName("7. 비밀번호를 일정 횟수 틀릴 시 blockedTime update 된 후, 다시 로그인 시도시에 block, 일정 시간이 지난 후 다시 로그인 가능")
             @Test
-            public void idBlockException() throws Exception{
+//            @Disabled
+            public void idBlockException() throws Exception {
                 //given
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id(dummyId)
@@ -261,7 +263,7 @@ public class MemberAuthControllerTest {
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
-                for(int i=0;i<3;i++) {//일정횟수동안 로그인 실패함
+                for (int i = 0; i < 3; i++) {//일정횟수동안 로그인 실패함
                     mvc.perform(post("/auth/login").contentType("application/json;charset=utf-8")
                                     .content(stringify))//when
                             //then
@@ -288,12 +290,23 @@ public class MemberAuthControllerTest {
                 assertThat(mapper.readValue(blockResponse.getResponse().getContentAsString(), ErrorMessageDTO.class).getMessage()).isNotEqualTo("잘못된 인증정보 입니다.");
 
                 //일정시간 이후에 로그인은 성공해야함
-                //mockito를 이용해서 시간설정 변경
-                Thread.sleep(1000*60*3);
+                //Thread.sleep을 사용하면 실제 테스트 시간이 길어지기 때문에, 해당 유저의 blockedTime을 3분 빼 준뒤 실행
+                Member member = memberRepository.findById(dummyId).get();
+                Member updated = Member.builder()
+                        .id(member.getId())
+                        .name(member.getName())
+                        .email(member.getEmail())
+                        .password(member.getPassword())
+                        .tryCount(member.getTryCount())
+                        .blockedTime(member.getBlockedTime().minusSeconds(60*3))//3분전에 block된걸로 셋팅
+                        .roles(member.getRoles())
+                        .build();
+
+                memberRepository.save(updated);
 
                 mvc.perform(post("/auth/login").contentType("application/json;charset=utf-8").content(stringify))
                         .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.accessToken",is(notNullValue())));
+                        .andExpect(jsonPath("$.accessToken", is(notNullValue())));
             }
         }
     }
@@ -302,9 +315,9 @@ public class MemberAuthControllerTest {
     /**
      * SAVE TODO
      * -----------------
-     *      성공케이스 (DB에 저장 잘 됐는지, DB에 잘 암호화 됐는지 확인) V
-     *      * 1. 정상 요청 v
-     *      * 2. 이름이 같은 요청이라도 ok v
+     * 성공케이스 (DB에 저장 잘 됐는지, DB에 잘 암호화 됐는지 확인) V
+     * * 1. 정상 요청 v
+     * * 2. 이름이 같은 요청이라도 ok v
      * <p>
      * <p>
      * 실패 케이스
