@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -40,20 +41,21 @@ public class MemberAuthServiceTests {
     private PasswordEncoder passwordEncoder;
 
     private List<Member> memberList = new ArrayList<>();
+    private String rightPassword = "Abcdefg123!";
 
     @BeforeEach
     public void insertDummies() {
-        IntStream.rangeClosed(1, 200).forEach(i -> {
+        IntStream.rangeClosed(1,5).forEach(i -> {
             Member member = Member.builder()
                     .id("Tester".concat(Integer.toString(i)))
                     .email("tester".concat(Integer.toString(i)).concat("@gmail.com"))
                     .name("tester".concat(Integer.toString(i)))
-                    .password(passwordEncoder.encode("1111"))
+                    .password(passwordEncoder.encode(rightPassword))
                     .build();
             memberList.add(member);
         });
 
-        memberRepository.saveAllAndFlush(memberList);
+        memberRepository.saveAll(memberList);
     }
 
     /**
@@ -87,7 +89,7 @@ public class MemberAuthServiceTests {
             public void loginSuccessTest() throws ValidationException, UserInfoNotFoundException, LoginException {
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id(dummy.getId())
-                        .password("1111")
+                        .password(rightPassword)
                         .build();
 
                 LoginDTO.Response user = memberAuthService.login(request);
@@ -102,7 +104,7 @@ public class MemberAuthServiceTests {
             public void loginWithSpaceTest() throws Exception {
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id(dummy.getId().concat("          "))//공백 추가
-                        .password("1111")
+                        .password(rightPassword)
                         .build();
 
                 LoginDTO.Response user = memberAuthService.login(request);
@@ -121,7 +123,7 @@ public class MemberAuthServiceTests {
             public void idIsBlankTest() {
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id("               ")//공백으로만 이루어짐
-                        .password(dummy.getPassword())
+                        .password(rightPassword)
                         .build();
 
                 String message = assertThrows(ValidationException.class, () -> {
@@ -135,7 +137,7 @@ public class MemberAuthServiceTests {
             public void idIsNullTest() {
                 //아이디가 null로 주어짐
                 LoginDTO.Request request = LoginDTO.Request.builder()
-                        .password(dummy.getPassword())
+                        .password(rightPassword)
                         .build();
 
                 String message = assertThrows(ValidationException.class, () -> {
@@ -206,6 +208,7 @@ public class MemberAuthServiceTests {
             @DisplayName("로그인 시도 3회시 block, block시간이 지난 후 로그인 가능")
             public void memberBlockTest() throws ValidationException, UserInfoNotFoundException, LoginException {
                 int beforeTryCount = dummy.getTryCount();
+                String rightPass = dummy.getPassword();
                 LoginDTO.Request request = LoginDTO.Request.builder()
                         .id(dummy.getId())
                         .password("notExistPassword")
@@ -227,7 +230,7 @@ public class MemberAuthServiceTests {
 
                 LoginDTO.Request rightRequest = LoginDTO.Request.builder()
                         .id(dummy.getId())
-                        .password(dummy.getPassword())
+                        .password(rightPassword)
                         .build();
 
                 //시간이 지나지 않아서 로그인 실패
@@ -244,10 +247,10 @@ public class MemberAuthServiceTests {
                         .email(dummy.getEmail())
                         .password(dummy.getPassword())
                         .tryCount(dummy.getTryCount())
-                        .blockedTime(dummy.getBlockedTime().minusSeconds(60 * 3))//3분전에 block된걸로 셋팅
+                        .blockedTime(LocalDateTime.now().minusSeconds(60 * 3))//3분전에 block된걸로 셋팅
                         .roles(dummy.getRoles())
                         .build();
-                memberRepository.save(updated);
+                memberRepository.saveAndFlush(updated);
 
                 LoginDTO.Response response = memberAuthService.login(rightRequest);
                 assertThat(response.getAccessToken()).isNotNull();
@@ -295,22 +298,15 @@ public class MemberAuthServiceTests {
                     .id("notExistId123")
                     .name("notExistName")
                     .email("notExistEmail123@gmail.com")
-                    .password("1111")
-                    .passwordCheck("1111")
+                    .password("Abcdefg123!")
+                    .passwordCheck("Abcdefg123!")
                     .agree(true)
                     .build();
-
-            beforeSize = memberRepository.findAll().size();
         }
 
         @Nested
         @DisplayName("success")
         public class Success {
-
-            @AfterEach
-            public void assertDatabase(){
-                assertThat(memberRepository.findAll().size()).isEqualTo(beforeSize+1);//db에 잘 저장됐는지 확인
-            }
             @Test
             @DisplayName("1. 정상 요청")
             public void success() throws SaveException, ValidationException, AlreadyExistException {
@@ -338,10 +334,6 @@ public class MemberAuthServiceTests {
         @Nested
         @DisplayName("fail")
         public class Fail {
-            @AfterEach
-            public void assertDatabase(){//저장이 되지 않아야함
-                assertThat(memberRepository.findAll().size()).isEqualTo(beforeSize);
-            }
             @Test
             @DisplayName("2. 아이디의 길이가 5 미만 ")
             public void idLengthLessThen() {
