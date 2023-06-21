@@ -9,6 +9,7 @@ import com.hyeonuk.todo.member.entity.Member;
 import com.hyeonuk.todo.member.repository.MemberRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,9 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.hamcrest.core.Is.is;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -29,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@AutoConfigureRestDocs
 public class MemberAuthControllerTest {
     @Autowired
     private MockMvc mvc;
@@ -41,6 +46,10 @@ public class MemberAuthControllerTest {
 
     @Autowired
     private JwtProvider jwtProvider;
+
+    /*
+    * RestDocs
+    * */
 
     /**
      *  TODO
@@ -104,6 +113,17 @@ public class MemberAuthControllerTest {
                         //then
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.accessToken", notNullValue()))
+                        .andDo(document("로그인 성공",
+                                preprocessRequest(prettyPrint()),
+                                preprocessResponse(prettyPrint()),
+                                requestFields(
+                                        fieldWithPath("id").type(String.class).description("아이디"),
+                                        fieldWithPath("password").description("비밀번호")
+                                ),
+                                responseFields(
+                                        fieldWithPath("accessToken").description("인증토큰")
+                                ))
+                        )
                         .andReturn();
 
                 String responseData = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
@@ -377,6 +397,23 @@ public class MemberAuthControllerTest {
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.id", is(request.getId())))
                         .andExpect(jsonPath("$.email", is(request.getEmail())))
+                        .andDo(document("회원가입 성공",
+                                preprocessRequest(prettyPrint()),
+                                preprocessResponse(prettyPrint()),
+                                requestFields(
+                                        fieldWithPath("id").type(String.class).description("아이디").description("아이디는 5~20자의 영문 대소문자, 숫자로 이루어져야 합니다."),
+                                        fieldWithPath("email").type(String.class).description("이메일"),
+                                        fieldWithPath("password").type(String.class).description("비밀번호").description("비밀번호는 8~16자의 소문자, 대문자, 숫자, 특수문자로 이루어져야 합니다."),
+                                        fieldWithPath("passwordCheck").type(String.class).description("비밀번호 확인"),
+                                        fieldWithPath("name").type(String.class).description("이름").description("이름은 50자 이하여야 합니다."),
+                                        fieldWithPath("agree").type(Boolean.class).description("약관 동의")
+                                ),
+                                responseFields(
+                                        fieldWithPath("id").description("아이디"),
+                                        fieldWithPath("email").description("이메일"),
+                                        fieldWithPath("name").description("이름")
+                                ))
+                        )
                         .andExpect(jsonPath("$.name", is(request.getName())));
 
                 //2. DB에 저장됐는지 검증

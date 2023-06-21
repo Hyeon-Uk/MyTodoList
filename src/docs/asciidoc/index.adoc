@@ -1,0 +1,37 @@
+= REST Docs
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+[[MEMBER_로그인]]
+== Member 로그인
+include::{snippets}/로그인 성공/http-request.adoc[]
+
+==== Request Field
+include::{snippets}/로그인 성공/request-fields.adoc[]
+
+==== Response Sample
+include::{snippets}/로그인 성공/http-request.adoc[]
+
+==== Response Fields
+include::{snippets}/로그인 성공/response-fields.adoc[]
+
+[[MEMBER_회원가입]]
+== Member 회원가입
+include::{snippets}/회원가입 성공/http-request.adoc[]
+
+==== Request Field
+include::{snippets}/회원가입 성공/request-fields.adoc[]
+
+==== Response Sample
+include::{snippets}/회원가입 성공/http-request.adoc[]
+
+==== Response Fields
+include::{snippets}/회원가입 성공/response-fields.adoc[]

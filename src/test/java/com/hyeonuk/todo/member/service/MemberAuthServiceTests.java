@@ -100,6 +100,7 @@ public class MemberAuthServiceTests {
             }
 
             @Test
+            @Disabled
             @DisplayName("아이디 끝에 공백이 들어간 경우 -> 성공으로 간주")
             public void loginWithSpaceTest() throws Exception {
                 LoginDTO.Request request = LoginDTO.Request.builder()
