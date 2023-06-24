@@ -1,7 +1,7 @@
 package com.hyeonuk.todo.member.repository;
 
 import com.hyeonuk.todo.MyTodoListApplication;
-import com.hyeonuk.todo.integ.data.MEMBER_MAX_LENGTH;
+import com.hyeonuk.todo.member.data.MEMBER_MAX_LENGTH;
 import com.hyeonuk.todo.member.entity.Member;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

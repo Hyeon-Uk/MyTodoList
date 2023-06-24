@@ -1,4 +1,4 @@
-package com.hyeonuk.todo.integ.data;
+package com.hyeonuk.todo.member.data;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

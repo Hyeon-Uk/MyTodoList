@@ -1,4 +1,4 @@
-package com.hyeonuk.todo.integ.data;
+package com.hyeonuk.todo.member.data;
 
 public enum MEMBER_MAX_LENGTH{
     ID(20),EMAIL(255),PASSWORD(255),NAME(50),IMG(255),DESC(500);

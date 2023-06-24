@@ -1,7 +1,7 @@
 package com.hyeonuk.todo.member.service;
 
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
-import com.hyeonuk.todo.integ.exception.UserInfoNotFoundException;
+import com.hyeonuk.todo.member.exception.UserInfoNotFoundException;
 import com.hyeonuk.todo.integ.exception.ValidationException;
 import com.hyeonuk.todo.member.dto.LoginDTO;
 import com.hyeonuk.todo.member.dto.SaveDTO;

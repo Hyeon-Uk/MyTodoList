@@ -1,7 +1,7 @@
 package com.hyeonuk.todo.member.entity;
 
-import com.hyeonuk.todo.integ.data.MemberColumnLength;
-import com.hyeonuk.todo.integ.data.MEMBER_MAX_LENGTH;
+import com.hyeonuk.todo.member.data.MemberColumnLength;
+import com.hyeonuk.todo.member.data.MEMBER_MAX_LENGTH;
 import com.hyeonuk.todo.integ.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;

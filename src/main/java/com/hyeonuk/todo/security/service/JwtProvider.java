@@ -1,4 +1,4 @@
-package com.hyeonuk.todo.integ.util;
+package com.hyeonuk.todo.security.service;
 
 import com.hyeonuk.todo.member.entity.Authority;
 import io.jsonwebtoken.*;

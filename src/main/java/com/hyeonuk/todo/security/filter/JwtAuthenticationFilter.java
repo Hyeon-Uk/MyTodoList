@@ -1,8 +1,7 @@
 package com.hyeonuk.todo.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hyeonuk.todo.integ.dto.ErrorMessageDTO;
-import com.hyeonuk.todo.integ.util.JwtProvider;
+import com.hyeonuk.todo.security.service.JwtProvider;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

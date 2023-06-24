@@ -2,9 +2,8 @@ package com.hyeonuk.todo.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hyeonuk.todo.integ.dto.ErrorMessageDTO;
-import com.hyeonuk.todo.integ.util.JwtProvider;
+import com.hyeonuk.todo.security.service.JwtProvider;
 import com.hyeonuk.todo.security.filter.JwtAuthenticationFilter;
-import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,13 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,7 +32,7 @@ import java.util.List;
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final String[] whiteList = {"/auth/login", "/auth/regist"};
+    private final String[] whiteList = {"/auth/login", "/auth/regist","/api/email/auth/**"};
     private final JwtProvider jwtProvider;
     private final ObjectMapper objectMapper;
     private final UserDetailsService userDetailsService;

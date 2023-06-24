@@ -1,4 +1,4 @@
-package com.hyeonuk.todo.integ.util;
+package com.hyeonuk.todo.security.exception;
 
 public class JwtException extends Exception{
     public JwtException(String message) {

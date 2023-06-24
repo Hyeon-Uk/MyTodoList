@@ -2,19 +2,17 @@ package com.hyeonuk.todo.member.controller;
 
 import com.hyeonuk.todo.integ.dto.ErrorMessageDTO;
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
-import com.hyeonuk.todo.integ.exception.UserInfoNotFoundException;
+import com.hyeonuk.todo.member.exception.UserInfoNotFoundException;
 import com.hyeonuk.todo.integ.exception.ValidationException;
 import com.hyeonuk.todo.member.dto.LoginDTO;
 import com.hyeonuk.todo.member.dto.SaveDTO;
 import com.hyeonuk.todo.member.exception.LoginException;
 import com.hyeonuk.todo.member.exception.SaveException;
 import com.hyeonuk.todo.member.service.MemberAuthService;
-import com.hyeonuk.todo.security.service.CustomUserDetail;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
