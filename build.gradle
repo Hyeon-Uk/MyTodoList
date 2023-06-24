@@ -39,6 +39,12 @@ dependencies {
 
     //spring rest docs 을 이용하기 위한 라이브러리
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+
+    //redis를 사용하기 위한 라이브러리
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    //email전송을 위한 라이브러리
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {

@@ -1,9 +1,12 @@
 package com.hyeonuk.todo.member.service;
 
+import com.hyeonuk.todo.email.dto.EmailAuthCheckDTO;
+import com.hyeonuk.todo.email.exception.EmailAuthException;
+import com.hyeonuk.todo.email.service.EmailAuthService;
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
-import com.hyeonuk.todo.integ.exception.UserInfoNotFoundException;
+import com.hyeonuk.todo.member.exception.UserInfoNotFoundException;
 import com.hyeonuk.todo.integ.exception.ValidationException;
-import com.hyeonuk.todo.integ.util.JwtProvider;
+import com.hyeonuk.todo.security.service.JwtProvider;
 import com.hyeonuk.todo.member.dto.LoginDTO;
 import com.hyeonuk.todo.member.dto.SaveDTO;
 import com.hyeonuk.todo.member.entity.Member;
@@ -13,6 +16,7 @@ import com.hyeonuk.todo.member.repository.MemberRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +28,8 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @Transactional
@@ -33,6 +39,9 @@ public class MemberAuthServiceTests {
 
     @Autowired
     private MemberAuthService memberAuthService;
+
+    @MockBean
+    public EmailAuthService emailAuthService;
 
     @Autowired
     private JwtProvider jwtProvider;
@@ -44,7 +53,7 @@ public class MemberAuthServiceTests {
     private String rightPassword = "Abcdefg123!";
 
     @BeforeEach
-    public void insertDummies() {
+    public void insertDummies() throws EmailAuthException {
         IntStream.rangeClosed(1,5).forEach(i -> {
             Member member = Member.builder()
                     .id("Tester".concat(Integer.toString(i)))
@@ -56,6 +65,9 @@ public class MemberAuthServiceTests {
         });
 
         memberRepository.saveAll(memberList);
+
+        when(emailAuthService.emailAuthCheck(any())).thenReturn(EmailAuthCheckDTO.Response.builder()
+                .result(true).build());
     }
 
     /**
@@ -302,6 +314,7 @@ public class MemberAuthServiceTests {
                     .password("Abcdefg123!")
                     .passwordCheck("Abcdefg123!")
                     .agree(true)
+                    .emailAuthCode("code")
                     .build();
         }
 

@@ -1,10 +1,12 @@
 package com.hyeonuk.todo.member.service;
 
-import com.hyeonuk.todo.integ.data.MEMBER_MAX_LENGTH;
+import com.hyeonuk.todo.email.dto.EmailAuthCheckDTO;
+import com.hyeonuk.todo.email.service.EmailAuthService;
+import com.hyeonuk.todo.member.data.MEMBER_MAX_LENGTH;
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
-import com.hyeonuk.todo.integ.exception.UserInfoNotFoundException;
+import com.hyeonuk.todo.member.exception.UserInfoNotFoundException;
 import com.hyeonuk.todo.integ.exception.ValidationException;
-import com.hyeonuk.todo.integ.util.JwtProvider;
+import com.hyeonuk.todo.security.service.JwtProvider;
 import com.hyeonuk.todo.member.dto.LoginDTO;
 import com.hyeonuk.todo.member.dto.SaveDTO;
 import com.hyeonuk.todo.member.entity.Member;
@@ -30,6 +32,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final EmailAuthService emailAuthService;
     private final String ID_REGEX = "^(?=.*[a-zA-Z])(?=.*\\d)[a-zA-Z\\d]{5," + MEMBER_MAX_LENGTH.ID.getValue() + "}$";
     private final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     private final String PW_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[a-zA-Z\\d!@#$%^&*]{8,16}$";
@@ -88,7 +91,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
                 || StringUtils.isBlank(dto.getEmail())
                 || StringUtils.isBlank(dto.getName())
                 || StringUtils.isBlank(dto.getPassword())
-                || StringUtils.isBlank(dto.getPasswordCheck())) throw new ValidationException("입력값을 다시 확인해주세요");
+                || StringUtils.isBlank(dto.getPasswordCheck())
+                || StringUtils.isBlank(dto.getEmailAuthCode())) throw new ValidationException("입력값을 다시 확인해주세요");
 
         //아이디 : 5~20자의 영문 소문자, 대문자, 숫자만 사용이 가능합니다.(특수문자 넣으면 에러)
         if (!Pattern.matches(ID_REGEX, dto.getId()))
@@ -130,6 +134,16 @@ public class MemberAuthServiceImpl implements MemberAuthService {
 
 //            비밀번호를 encoding
             dto.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+            //이메일 인증번호를 cache서버에서 다시 확인
+            EmailAuthCheckDTO.Response response = emailAuthService.emailAuthCheck(EmailAuthCheckDTO.Request.builder()
+                    .email(dto.getEmail())
+                    .code(dto.getEmailAuthCode())
+                    .build());
+
+            if(!response.getResult()){
+                throw new ValidationException("인증코드가 일치하지 않습니다.");
+            }
 
             //최종적으로 save함
             return entityToSaveDTO(memberRepository.save(saveDTOToEntity(dto)));

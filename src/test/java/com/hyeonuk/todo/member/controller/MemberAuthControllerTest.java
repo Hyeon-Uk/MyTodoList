@@ -1,27 +1,36 @@
 package com.hyeonuk.todo.member.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hyeonuk.todo.email.dto.EmailAuthCheckDTO;
+import com.hyeonuk.todo.email.exception.EmailAuthException;
+import com.hyeonuk.todo.email.service.EmailAuthService;
+import com.hyeonuk.todo.email.service.EmailService;
 import com.hyeonuk.todo.integ.dto.ErrorMessageDTO;
-import com.hyeonuk.todo.integ.util.JwtProvider;
+import com.hyeonuk.todo.integ.exception.ValidationException;
+import com.hyeonuk.todo.security.service.JwtProvider;
 import com.hyeonuk.todo.member.dto.LoginDTO;
 import com.hyeonuk.todo.member.dto.SaveDTO;
 import com.hyeonuk.todo.member.entity.Member;
 import com.hyeonuk.todo.member.repository.MemberRepository;
 import org.junit.jupiter.api.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
@@ -37,6 +46,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class MemberAuthControllerTest {
     @Autowired
     private MockMvc mvc;
+
+    @MockBean
+    private EmailAuthService emailAuthService;
 
     @Autowired
     private MemberRepository memberRepository;
@@ -80,8 +92,12 @@ public class MemberAuthControllerTest {
         //임의의 유저를 먼저 가입시켜둠
         @BeforeEach
         public void insertDummyUser() throws Exception {
+            when(emailAuthService.emailAuthCheck(any())).thenReturn(EmailAuthCheckDTO.Response.builder()
+                    .result(true)
+                    .build());
             SaveDTO.Request request = SaveDTO.Request.builder()
                     .agree(true)
+                    .emailAuthCode("code")
                     .id(dummyId)
                     .password(dummyPassword)
                     .passwordCheck(dummyPassword)
@@ -370,6 +386,12 @@ public class MemberAuthControllerTest {
         //비밀번호 확인 : 위에 입력한 비밀번호와 일치해야함
         String registRequestURL = "/auth/regist";
 
+        @BeforeEach
+        public void init() throws EmailAuthException {
+            when(emailAuthService.emailAuthCheck(any())).thenReturn(EmailAuthCheckDTO.Response.builder()
+                    .result(true).build());
+        }
+
         @Nested
         @DisplayName("success Test")
         class Success {
@@ -386,6 +408,7 @@ public class MemberAuthControllerTest {
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
                         .agree(true)
+                        .emailAuthCode("code")
                         .build();
 
                 String stringify = mapper.writeValueAsString(request);
@@ -406,7 +429,8 @@ public class MemberAuthControllerTest {
                                         fieldWithPath("password").type(String.class).description("비밀번호").description("비밀번호는 8~16자의 소문자, 대문자, 숫자, 특수문자로 이루어져야 합니다."),
                                         fieldWithPath("passwordCheck").type(String.class).description("비밀번호 확인"),
                                         fieldWithPath("name").type(String.class).description("이름").description("이름은 50자 이하여야 합니다."),
-                                        fieldWithPath("agree").type(Boolean.class).description("약관 동의")
+                                        fieldWithPath("agree").type(Boolean.class).description("약관 동의"),
+                                        fieldWithPath("emailAuthCode").type(String.class).description("이메일 인증 코드")
                                 ),
                                 responseFields(
                                         fieldWithPath("id").description("아이디"),
@@ -434,7 +458,7 @@ public class MemberAuthControllerTest {
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
                         .name(sameName)
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(already);
                 mvc.perform(post(registRequestURL).content(stringify).contentType("application/json;charset=utf-8"))
@@ -447,7 +471,7 @@ public class MemberAuthControllerTest {
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
                         .name(sameName)
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(sameNameUser);
 
@@ -488,7 +512,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -510,7 +534,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -533,7 +557,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -556,7 +580,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -578,7 +602,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120")//이메일 타입이 아님
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -600,7 +624,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Ab123!")//비밀번호가 8자 미만
                         .passwordCheck("Ab123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -622,7 +646,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Ab12fasdfasdfsafsdfasfasdfsafasdfsdfasdffasdfasdfa3!")//비밀번호가 16자 초과
                         .passwordCheck("Ab12fasdfasdfsafsdfasfasdfsafasdfsdfasdffasdfasdfa3!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -644,7 +668,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("ABCVDSA123!")//소문자 입력x
                         .passwordCheck("ABCVDSA123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -666,7 +690,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("abcdwasdf123!")//대문자 입력x
                         .passwordCheck("abcdwasdf123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -688,7 +712,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("abcdwasABAD!")//숫자 입력x
                         .passwordCheck("abcdwasABAD!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -710,7 +734,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("abcdwasABAD12")//특수문자 입력 x
                         .passwordCheck("abcdwasABAD12")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -754,7 +778,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("!321gfedcbA")//비밀번호 확인이 일치하지 않음
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -776,7 +800,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -794,7 +818,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(request);
 
@@ -816,7 +840,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -834,7 +858,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(request);
 
@@ -856,7 +880,7 @@ public class MemberAuthControllerTest {
                         .name("KimHyeonuk")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -874,7 +898,7 @@ public class MemberAuthControllerTest {
                         .email("                ")
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(request);
 
@@ -896,7 +920,7 @@ public class MemberAuthControllerTest {
                         .name("KimHyeonuk")
                         .email("rlagusdnr120@gmail.com")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -914,7 +938,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("            ")
                         .passwordCheck("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(request);
 
@@ -936,7 +960,7 @@ public class MemberAuthControllerTest {
                         .name("KimHyeonuk")
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(request);
 
@@ -954,7 +978,7 @@ public class MemberAuthControllerTest {
                         .email("rlagusdnr120@gmail.com")
                         .password("Abcdefg123!")
                         .passwordCheck("                 ")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(request);
 
@@ -977,7 +1001,7 @@ public class MemberAuthControllerTest {
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
                         .name("tester1")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(already);
                 mvc.perform(post(registRequestURL).content(stringify).contentType("application/json;charset=utf-8"))
@@ -991,7 +1015,7 @@ public class MemberAuthControllerTest {
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
                         .name("tester2")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(duplicatedUser);
 
@@ -1013,7 +1037,7 @@ public class MemberAuthControllerTest {
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
                         .name("tester1")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 String stringify = mapper.writeValueAsString(already);
                 mvc.perform(post(registRequestURL).content(stringify).contentType("application/json;charset=utf-8"))
@@ -1027,7 +1051,7 @@ public class MemberAuthControllerTest {
                         .password("Abcdefg123!")
                         .passwordCheck("Abcdefg123!")
                         .name("tester2")
-                        .agree(true)
+                        .agree(true).emailAuthCode("code")
                         .build();
                 stringify = mapper.writeValueAsString(duplicatedUser);
 
