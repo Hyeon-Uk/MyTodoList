@@ -39,7 +39,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-@Transactional
 @ExtendWith(MockitoExtension.class)
 public class MemberAuthServiceTests {
     @Mock
@@ -62,7 +61,7 @@ public class MemberAuthServiceTests {
     private String rightPassword = "Abcdefg123!";
 
     @BeforeEach
-    public void init() throws EmailAuthException {
+    public void mockSetting() throws EmailAuthException{
         //jwt provider
         //토큰은 id.roles.date 형식으로 이어붙인 임시토큰으로 발급
         lenient().when(jwtProvider.createToken(anyString(),any(List.class))).thenAnswer(invocation -> {
@@ -112,7 +111,7 @@ public class MemberAuthServiceTests {
         //memberRepository 셋팅
         lenient().when(memberRepository.findAll()).thenReturn(memberList);
         lenient().when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> {
-           Member member = invocation.getArgument(0,Member.class);
+            Member member = invocation.getArgument(0,Member.class);
 
             memberList = memberList.stream().filter(mem -> !mem.getId().equals(member.getId())).collect(Collectors.toList());
             memberList.add(member);
@@ -125,11 +124,11 @@ public class MemberAuthServiceTests {
                     .findAny();
         });
         lenient().when(memberRepository.findByEmail(anyString())).thenAnswer(invocation -> {
-           String email = invocation.getArgument(0);
+            String email = invocation.getArgument(0);
 
-           return memberList.stream()
-                   .filter(mem->mem.getEmail().equals(email))
-                   .findAny();
+            return memberList.stream()
+                    .filter(mem->mem.getEmail().equals(email))
+                    .findAny();
         });
 
         //passwordEncoder.encode와 match를 설정해줌.
@@ -148,7 +147,9 @@ public class MemberAuthServiceTests {
 
             return  sb.reverse().toString().equals(encoded);
         });
-
+    }
+    @BeforeEach
+    public void init(){
         IntStream.rangeClosed(1,1000).forEach(i -> {
             Member member = Member.builder()
                     .id("Tester".concat(Integer.toString(i)))
@@ -386,6 +387,9 @@ public class MemberAuthServiceTests {
      * * 19. 비밀번호 확인이 null or 공백인 경우 v
      * * 20. 아이디 중복인 경우 v
      * * 21. 이메일이 중복인 경우 v
+     * * 22. 이메일 인증 코드가 null인 경우 v
+     * * 23. 이메일 인증 코드가 blank인 경우 v
+     * * 24. 이메일 인증 코드가 일치하지 않는 경우
      */
     @Nested
     @DisplayName("regist")
@@ -721,6 +725,36 @@ public class MemberAuthServiceTests {
                     memberAuthService.save(req);
                 }).getMessage();
                 assertThat(message).isEqualTo("존재하는 이메일입니다.");
+            }
+
+            @Test
+            @DisplayName("22. 이메일 인증 코드가 null인 경우")
+            public void emailAuthCodeNullTest() {
+                req.setEmailAuthCode(null);//이메일 인증 코드를 null로 셋팅
+                String message = assertThrows(ValidationException.class,()->{
+                    memberAuthService.save(req);
+                }).getMessage();
+                assertThat(message).isEqualTo("입력값을 다시 확인해주세요");
+            }
+
+            @Test
+            @DisplayName("23. 이메일 인증 코드가 blank인 경우")
+            public void emailAuthCodeBlankTest() {
+                req.setEmailAuthCode("        ");//이메일 인증 코드를 blank로 설정
+                String message = assertThrows(ValidationException.class,()->{
+                    memberAuthService.save(req);
+                }).getMessage();
+                assertThat(message).isEqualTo("입력값을 다시 확인해주세요");
+            }
+
+            @Test
+            @DisplayName("24. 이메일 인증 코드가 일치하지 않는 경우")
+            public void emailAuthCodeNotMatchTest() {
+                req.setEmailAuthCode("NotMatchCode");//이메일 인증 코드가 일치하지 않는 경우
+                String message = assertThrows(ValidationException.class,()->{
+                    memberAuthService.save(req);
+                }).getMessage();
+                assertThat(message).isEqualTo("인증코드가 일치하지 않습니다.");
             }
         }
     }
