@@ -45,7 +45,7 @@ public class EmailAuthServiceImpl implements EmailAuthService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)//이메일을 보내다가
-    public EmailAuthDTO.Response emailAuthSend(EmailAuthDTO.Request dto) throws EmailAuthException{
+    public EmailAuthDTO.Response emailAuthSend(EmailAuthDTO.Request dto) throws EmailAuthException {
         try {
             String code = generateCode();//랜덤 코드 생성
             String target = dto.getEmail();//코드를 전송할 이메일 생성
@@ -69,13 +69,15 @@ public class EmailAuthServiceImpl implements EmailAuthService {
             return EmailAuthDTO.Response.builder()
                     .result(true)
                     .build();
-        } catch(Exception e){
+        } catch (Exception e) {
+            //오류가 발생하면 redis서버에서 인증코드를 삭제함
+            emailAuthenticationRepository.deleteById(dto.getEmail());
             throw new EmailAuthException("인증번호 전송 오류");
         }
     }
 
     @Override
-    @Transactional(readOnly = true , isolation = Isolation.READ_COMMITTED)//커밋된 내용만 읽기.
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)//커밋된 내용만 읽기.
     public EmailAuthCheckDTO.Response emailAuthCheck(EmailAuthCheckDTO.Request dto) throws EmailAuthException {
         try {
             String email = dto.getEmail();
@@ -84,21 +86,20 @@ public class EmailAuthServiceImpl implements EmailAuthService {
             //cache서버에 저장된 인증코드와 일치하는지 확인
             Optional<EmailAuthentication> authentication = emailAuthenticationRepository.findById(email);
 
-            if(authentication.isPresent()){
+            if (authentication.isPresent()) {
                 EmailAuthentication result = authentication.get();
                 return EmailAuthCheckDTO.Response.builder()
                         //결과값이 같으면 true,아니면 false리턴
                         .result(!StringUtils.isBlank(code)
-                                &&!StringUtils.isBlank(result.getCode())
-                                &&result.getCode().equals(code))
+                                && !StringUtils.isBlank(result.getCode())
+                                && result.getCode().equals(code))
                         .build();
-            }
-            else{
+            } else {
                 return EmailAuthCheckDTO.Response.builder()
                         .result(false)
                         .build();
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new EmailAuthException("이메일 인증 오류");
         }
     }
