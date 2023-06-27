@@ -4,13 +4,17 @@ import lombok.*;
 
 public class LoginDTO {
     @Builder
-    @AllArgsConstructor
     @NoArgsConstructor
     @Getter
     @Setter
     public static class Request{
         private String id;
         private String password;
+
+        public Request(String id,String password){
+            setId(id);
+            this.password=password;
+        }
 
         public void setId(String id) {
             if(id!=null) {

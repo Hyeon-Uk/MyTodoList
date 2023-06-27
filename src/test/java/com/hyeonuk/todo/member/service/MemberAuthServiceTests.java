@@ -1,9 +1,11 @@
 package com.hyeonuk.todo.member.service;
 
 import com.hyeonuk.todo.email.dto.EmailAuthCheckDTO;
+import com.hyeonuk.todo.email.dto.EmailAuthDTO;
 import com.hyeonuk.todo.email.exception.EmailAuthException;
 import com.hyeonuk.todo.email.service.EmailAuthService;
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
+import com.hyeonuk.todo.member.entity.Authority;
 import com.hyeonuk.todo.member.exception.UserInfoNotFoundException;
 import com.hyeonuk.todo.integ.exception.ValidationException;
 import com.hyeonuk.todo.security.service.JwtProvider;
@@ -14,6 +16,10 @@ import com.hyeonuk.todo.member.exception.LoginException;
 import com.hyeonuk.todo.member.exception.SaveException;
 import com.hyeonuk.todo.member.repository.MemberRepository;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -21,40 +27,129 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
 @Transactional
+@ExtendWith(MockitoExtension.class)
 public class MemberAuthServiceTests {
-    @Autowired
+    @Mock
     private MemberRepository memberRepository;
 
-    @Autowired
-    private MemberAuthService memberAuthService;
+    @InjectMocks
+    private MemberAuthServiceImpl memberAuthService;
 
-    @MockBean
+    @Mock
     public EmailAuthService emailAuthService;
 
-    @Autowired
+    @Mock
     private JwtProvider jwtProvider;
 
-    @Autowired
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private List<Member> memberList = new ArrayList<>();
+    private Map<String,String> emailAuthCode = new HashMap<>();//이메일 인증번호를 저장할 변수
     private String rightPassword = "Abcdefg123!";
 
     @BeforeEach
-    public void insertDummies() throws EmailAuthException {
-        IntStream.rangeClosed(1,5).forEach(i -> {
+    public void init() throws EmailAuthException {
+        //jwt provider
+        //토큰은 id.roles.date 형식으로 이어붙인 임시토큰으로 발급
+        lenient().when(jwtProvider.createToken(anyString(),any(List.class))).thenAnswer(invocation -> {
+            String id = invocation.getArgument(0);
+            List<Authority> roles = invocation.getArgument(1,List.class);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(id).append('_')
+                    .append(String.join("/",roles
+                            .stream()
+                            .map(i->i.getName())
+                            .collect(Collectors.toList())))
+                    .append('_')
+                    .append(LocalDateTime.now().toString());
+            String token =  sb.toString();
+            return token;
+        });
+
+        //provider.getId()
+        lenient().when(jwtProvider.getId(anyString())).thenAnswer(invocation -> {
+            String token = invocation.getArgument(0);
+            return token.split("_")[0];
+        });
+
+
+        //emailAuthService
+        lenient().when(emailAuthService.emailAuthCheck(any(EmailAuthCheckDTO.Request.class))).thenAnswer(invocation -> {
+            EmailAuthCheckDTO.Request request = invocation.getArgument(0,EmailAuthCheckDTO.Request.class);
+
+            String code = request.getCode();
+            String email = request.getEmail();
+            return EmailAuthCheckDTO.Response.builder()
+                    .result(code.equals(emailAuthCode.get(email)))
+                    .build();
+        });
+        lenient().when(emailAuthService.emailAuthSend(any(EmailAuthDTO.Request.class))).thenAnswer(invocation -> {
+            EmailAuthDTO.Request dto = invocation.getArgument(0,EmailAuthDTO.Request.class);
+            String email = dto.getEmail();
+            emailAuthCode.put(email,"randomCode");
+
+            return EmailAuthDTO.Response.builder()
+                    .result(true)
+                    .build();
+        });
+
+
+        //memberRepository 셋팅
+        lenient().when(memberRepository.findAll()).thenReturn(memberList);
+        lenient().when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> {
+           Member member = invocation.getArgument(0,Member.class);
+
+            memberList = memberList.stream().filter(mem -> !mem.getId().equals(member.getId())).collect(Collectors.toList());
+            memberList.add(member);
+            return member;
+        });
+        lenient().when(memberRepository.findById(anyString())).thenAnswer(invocation->{
+            String id = invocation.getArgument(0);
+            return memberList.stream()
+                    .filter(mem->mem.getId().equals(id))
+                    .findAny();
+        });
+        lenient().when(memberRepository.findByEmail(anyString())).thenAnswer(invocation -> {
+           String email = invocation.getArgument(0);
+
+           return memberList.stream()
+                   .filter(mem->mem.getEmail().equals(email))
+                   .findAny();
+        });
+
+        //passwordEncoder.encode와 match를 설정해줌.
+        //passwordEncoder.encode = 임시방편으로 입력값의 역순으로 암호화해줌
+        lenient().when(passwordEncoder.encode(anyString())).thenAnswer(invocation->{
+            String input = invocation.getArgument(0);
+            StringBuilder sb = new StringBuilder(input);
+            return sb.reverse().toString();
+        });
+
+        //passwordEncoder.matches
+        lenient().when(passwordEncoder.matches(anyString(),anyString())).thenAnswer(invocation->{
+            String raw = invocation.getArgument(0);
+            String encoded = invocation.getArgument(1);
+            StringBuilder sb = new StringBuilder(raw);
+
+            return  sb.reverse().toString().equals(encoded);
+        });
+
+        IntStream.rangeClosed(1,1000).forEach(i -> {
             Member member = Member.builder()
                     .id("Tester".concat(Integer.toString(i)))
                     .email("tester".concat(Integer.toString(i)).concat("@gmail.com"))
@@ -63,11 +158,6 @@ public class MemberAuthServiceTests {
                     .build();
             memberList.add(member);
         });
-
-        memberRepository.saveAll(memberList);
-
-        when(emailAuthService.emailAuthCheck(any())).thenReturn(EmailAuthCheckDTO.Response.builder()
-                .result(true).build());
     }
 
     /**
@@ -112,13 +202,9 @@ public class MemberAuthServiceTests {
             }
 
             @Test
-            @Disabled
             @DisplayName("아이디 끝에 공백이 들어간 경우 -> 성공으로 간주")
             public void loginWithSpaceTest() throws Exception {
-                LoginDTO.Request request = LoginDTO.Request.builder()
-                        .id(dummy.getId().concat("          "))//공백 추가
-                        .password(rightPassword)
-                        .build();
+                LoginDTO.Request request = new LoginDTO.Request(dummy.getId().concat(" "),rightPassword);
 
                 LoginDTO.Response user = memberAuthService.login(request);
 
@@ -260,10 +346,13 @@ public class MemberAuthServiceTests {
                         .email(dummy.getEmail())
                         .password(dummy.getPassword())
                         .tryCount(dummy.getTryCount())
-                        .blockedTime(LocalDateTime.now().minusSeconds(60 * 3))//3분전에 block된걸로 셋팅
+                        .blockedTime(LocalDateTime.now())//3분전에 block된걸로 셋팅
                         .roles(dummy.getRoles())
                         .build();
-                memberRepository.saveAndFlush(updated);
+
+                memberRepository.save(updated);
+
+                Optional<Member> byId = memberRepository.findById(updated.getId());
 
                 LoginDTO.Response response = memberAuthService.login(rightRequest);
                 assertThat(response.getAccessToken()).isNotNull();
@@ -306,7 +395,8 @@ public class MemberAuthServiceTests {
         int beforeSize ;//db에 저장된 Member의 수
 
         @BeforeEach
-        public void initRequestDTO() {
+        public void initRequestDTO() throws EmailAuthException {
+            emailAuthCode.put("notExistEmail123@gmail.com","authCode");
             req = SaveDTO.Request.builder()
                     .id("notExistId123")
                     .name("notExistName")
@@ -314,7 +404,7 @@ public class MemberAuthServiceTests {
                     .password("Abcdefg123!")
                     .passwordCheck("Abcdefg123!")
                     .agree(true)
-                    .emailAuthCode("code")
+                    .emailAuthCode(emailAuthCode.get("notExistEmail123@gmail.com"))
                     .build();
         }
 
