@@ -1,6 +1,7 @@
 package com.hyeonuk.todo.member.service;
 
 import com.hyeonuk.todo.email.dto.EmailAuthCheckDTO;
+import com.hyeonuk.todo.email.dto.EmailAuthRemoveDTO;
 import com.hyeonuk.todo.email.service.EmailAuthService;
 import com.hyeonuk.todo.member.data.MEMBER_MAX_LENGTH;
 import com.hyeonuk.todo.integ.exception.AlreadyExistException;
@@ -146,6 +147,12 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             }
 
             //최종적으로 save함
+
+            //save하면서 cache서버에 존재하는 key값 제거
+            emailAuthService.emailAuthRemove(EmailAuthRemoveDTO.Request.builder()
+                    .key(dto.getEmail())
+                    .build());
+
             return entityToSaveDTO(memberRepository.save(saveDTOToEntity(dto)));
         } catch (AlreadyExistException | ValidationException e) {//Already와 Validation 예외는 그냥 던져줌
             throw e;

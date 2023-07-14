@@ -1,5 +1,6 @@
 package com.hyeonuk.todo.email.service;
 
+import com.hyeonuk.todo.email.dto.EmailAuthRemoveDTO;
 import com.hyeonuk.todo.email.dto.EmailSendDTO;
 import com.hyeonuk.todo.email.entity.EmailAuthentication;
 import com.hyeonuk.todo.email.exception.EmailAuthException;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 
@@ -29,6 +31,7 @@ public class EmailAuthServiceImpl implements EmailAuthService {
 
     private static final String CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int CODE_LENGTH = 10;
+
     private String generateCode() {
         SecureRandom random = new SecureRandom();
         StringBuffer sb = new StringBuffer(CODE_LENGTH);
@@ -44,19 +47,22 @@ public class EmailAuthServiceImpl implements EmailAuthService {
 
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRED)//이메일을 보내다가
+    @Transactional(propagation = Propagation.REQUIRED)//이메일을 보내다가 Exception발생 시 Rollback
     public EmailAuthDTO.Response emailAuthSend(EmailAuthDTO.Request dto) throws EmailAuthException {
         try {
             String code = generateCode();//랜덤 코드 생성
             String target = dto.getEmail();//코드를 전송할 이메일 생성
 
-            //인증코드를 cache서버에 저장
-            emailAuthenticationRepository.save(
-                    EmailAuthentication.builder()
+            EmailAuthentication emailAuthentication = emailAuthenticationRepository.findById(target)
+                    .orElse(EmailAuthentication.builder()
                             .email(target)
-                            .code(code)
-                            .build()
-            );
+                            .build());
+
+            emailAuthentication.setCode(code);//코드 갱신
+            emailAuthentication.setCreatedAt(LocalDateTime.now());//생성시간 갱신
+
+            //인증코드를 cache서버에 저장
+            emailAuthenticationRepository.save(emailAuthentication);
 
             //인증번호를 전달할 객체를 만들기
             EmailSendDTO.Request sendRequest = EmailSendDTO.Request.builder()
@@ -92,7 +98,9 @@ public class EmailAuthServiceImpl implements EmailAuthService {
                         //결과값이 같으면 true,아니면 false리턴
                         .result(!StringUtils.isBlank(code)
                                 && !StringUtils.isBlank(result.getCode())
-                                && result.getCode().equals(code))
+                                && result.getCode().equals(code)
+                                && result.getCreatedAt() != null
+                                && LocalDateTime.now().isBefore(result.getCreatedAt().plusSeconds(3*60)))
                         .build();
             } else {
                 return EmailAuthCheckDTO.Response.builder()
@@ -101,6 +109,15 @@ public class EmailAuthServiceImpl implements EmailAuthService {
             }
         } catch (Exception e) {
             throw new EmailAuthException("이메일 인증 오류");
+        }
+    }
+
+    @Override
+    public void emailAuthRemove(EmailAuthRemoveDTO.Request dto) throws EmailAuthException {
+        try{
+            emailAuthenticationRepository.deleteById(dto.getKey());
+        }catch(Exception e){
+            throw new EmailAuthException("삭제도중 오류가 발생했습니다.");
         }
     }
 }
