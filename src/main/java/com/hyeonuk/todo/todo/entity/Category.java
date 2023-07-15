@@ -20,6 +20,7 @@ public class Category extends BaseEntity {
     @Column(name="category_id")
     private Long id;
 
+    @Column(name="title",length = 100)
     private String title;
 
     @ManyToOne
