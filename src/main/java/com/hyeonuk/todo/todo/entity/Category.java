@@ -23,7 +23,11 @@ public class Category extends BaseEntity {
     @Column(name="title",length = 100)
     private String title;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="member_id")
     private Member member;
+
+    public void updateTitle(String title){
+        this.title = title;
+    }
 }

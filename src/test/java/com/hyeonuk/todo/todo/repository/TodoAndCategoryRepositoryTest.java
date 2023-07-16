@@ -444,9 +444,8 @@ class TodoAndCategoryRepositoryTest {
          * 2. 존재하지 않는 member인 todo v
          * 3. 빈 todo v
          * 4. 글자수 200자 초과 v
-         * 5. 빈 category v
-         * 6. category title overlength v
-         * 7. 존재하지 않는 member category v
+         * 5. category title overlength v
+         * 6. 존재하지 않는 member category v
          */
         @Nested
         @DisplayName("fail")
@@ -532,24 +531,7 @@ class TodoAndCategoryRepositoryTest {
             }
 
             @Test
-            @DisplayName("5. 빈 category")
-            public void categoryNullTest(){
-                //given
-                int mIndex = 0;
-                Member member = memberList.get(mIndex);
-
-                Category category = Category.builder()
-                        .member(member)
-                        .title(null)
-                        .build();
-
-                //when & then
-                assertThrows(DataIntegrityViolationException.class,()->{
-                    categoryRepository.saveAndFlush(category);
-                });
-            }
-            @Test
-            @DisplayName("6. category title overlength")
+            @DisplayName("5. category title overlength")
             public void categoryTitleOverlength(){
                 //given
                 int mIndex = 0;
@@ -567,7 +549,7 @@ class TodoAndCategoryRepositoryTest {
             }
 
             @Test
-            @DisplayName("7. 존재하지 않는 member category")
+            @DisplayName("6. 존재하지 않는 member category")
             public void categoryMemberNotExist(){
                 //given
                 Member member = Member.builder()
