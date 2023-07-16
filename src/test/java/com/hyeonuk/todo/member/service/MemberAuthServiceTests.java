@@ -15,6 +15,8 @@ import com.hyeonuk.todo.member.entity.Member;
 import com.hyeonuk.todo.member.exception.LoginException;
 import com.hyeonuk.todo.member.exception.SaveException;
 import com.hyeonuk.todo.member.repository.MemberRepository;
+import com.hyeonuk.todo.todo.entity.Category;
+import com.hyeonuk.todo.todo.repository.CategoryRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -48,7 +50,9 @@ public class MemberAuthServiceTests {
     private MemberAuthServiceImpl memberAuthService;
 
     @Mock
-    public EmailAuthService emailAuthService;
+    private EmailAuthService emailAuthService;
+    @Mock
+    private CategoryRepository categoryRepository;
 
     @Mock
     private JwtProvider jwtProvider;
@@ -57,6 +61,7 @@ public class MemberAuthServiceTests {
     private PasswordEncoder passwordEncoder;
 
     private List<Member> memberList = new ArrayList<>();
+    private Map<String,List<Category>> categoryList = new HashMap<>();
     private Map<String,String> emailAuthCode = new HashMap<>();//이메일 인증번호를 저장할 변수
     private String rightPassword = "Abcdefg123!";
 
@@ -130,6 +135,17 @@ public class MemberAuthServiceTests {
                     .filter(mem->mem.getEmail().equals(email))
                     .findAny();
         });
+
+        //categoryRepository 셋팅
+        lenient().doAnswer(invocation -> {
+            Category category = invocation.getArgument(0,Category.class);
+            Member member = category.getMember();
+
+            if(categoryList.get(member.getId()) == null) categoryList.put(member.getId(),new ArrayList<>());
+
+            categoryList.get(member.getId()).add(category);
+            return null;
+        }).when(categoryRepository).save(any(Category.class));
 
         //passwordEncoder.encode와 match를 설정해줌.
         //passwordEncoder.encode = 임시방편으로 입력값의 역순으로 암호화해줌
@@ -422,7 +438,8 @@ public class MemberAuthServiceTests {
                 assertAll("save",
                         ()->assertThat(save.getId()).isEqualTo(req.getId()),
                         ()->assertThat(save.getEmail()).isEqualTo(req.getEmail()),
-                        ()->assertThat(save.getName()).isEqualTo(req.getName()));
+                        ()->assertThat(save.getName()).isEqualTo(req.getName()),
+                        ()->assertThat(categoryList.get(save.getId()).size()).isEqualTo(1));
             }
 
             @Test
@@ -435,7 +452,8 @@ public class MemberAuthServiceTests {
                 assertAll("save duplicatedName",
                         ()->assertThat(save.getId()).isEqualTo(req.getId()),
                         ()->assertThat(save.getEmail()).isEqualTo(req.getEmail()),
-                        ()->assertThat(save.getName()).isEqualTo(req.getName()));
+                        ()->assertThat(save.getName()).isEqualTo(req.getName()),
+                        ()->assertThat(categoryList.get(save.getId()).size()).isEqualTo(1));
             }
         }
 

@@ -15,6 +15,8 @@ import com.hyeonuk.todo.member.exception.LoginException;
 import com.hyeonuk.todo.member.exception.SaveException;
 import com.hyeonuk.todo.member.repository.MemberRepository;
 import com.hyeonuk.todo.integ.util.StringUtils;
+import com.hyeonuk.todo.todo.entity.Category;
+import com.hyeonuk.todo.todo.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +36,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final EmailAuthService emailAuthService;
+    private final CategoryRepository categoryRepository;
     private final String ID_REGEX = "^(?=.*[a-zA-Z])(?=.*\\d)[a-zA-Z\\d]{5," + MEMBER_MAX_LENGTH.ID.getValue() + "}$";
     private final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     private final String PW_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[a-zA-Z\\d!@#$%^&*]{8,16}$";
@@ -142,21 +145,30 @@ public class MemberAuthServiceImpl implements MemberAuthService {
                     .code(dto.getEmailAuthCode())
                     .build());
 
-            if(!response.getResult()){
+            if (!response.getResult()) {
                 throw new ValidationException("인증코드가 일치하지 않습니다.");
             }
 
             //최종적으로 save함
+            Member member = memberRepository.save(saveDTOToEntity(dto));
+
+            //default 카테고리를 하나 생성해서 save해줌
+            Category category = Category.builder()
+                    .member(member)
+                    .title("일반")
+                    .build();
+            categoryRepository.save(category);
 
             //save하면서 cache서버에 존재하는 key값 제거
             emailAuthService.emailAuthRemove(EmailAuthRemoveDTO.Request.builder()
                     .key(dto.getEmail())
                     .build());
 
-            return entityToSaveDTO(memberRepository.save(saveDTOToEntity(dto)));
+            return entityToSaveDTO(member);
         } catch (AlreadyExistException | ValidationException e) {//Already와 Validation 예외는 그냥 던져줌
             throw e;
         } catch (Exception e) {//나머지 예외는 SaveException으로 감싸서 throw
+            e.printStackTrace();
             throw new SaveException("회원가입 도중 오류가 발생했습니다.");
         }
     }

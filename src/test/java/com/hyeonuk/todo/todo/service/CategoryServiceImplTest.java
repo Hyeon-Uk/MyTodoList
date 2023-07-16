@@ -183,6 +183,10 @@ public class CategoryServiceImplTest {
                     .build();
 
             memberRepository.save(member);
+            categoryRepository.save(Category.builder()
+                    .member(member)
+                    .title("일반")
+                    .build());
         }
 
         for (int i = 0; i < 100; i++) {
@@ -445,7 +449,7 @@ public class CategoryServiceImplTest {
                 String message = assertThrows(ValidationException.class, () -> {
                     categoryService.delete(dto);
                 }).getMessage();
-                assertThat(message).isEqualTo("기본 카테고리는 제거할 수 없습니다.");
+                assertThat(message).isEqualTo("입력값을 확인해주세요");
             }
 
             @Test
@@ -600,7 +604,7 @@ public class CategoryServiceImplTest {
                 String message = assertThrows(ValidationException.class, () -> {
                     categoryService.update(dto);
                 }).getMessage();
-                assertThat(message).isEqualTo("기본 카테고리의 타이틀은 변경할 수 없습니다.");
+                assertThat(message).isEqualTo("입력값을 확인해주세요");
             }
             @Test
             @DisplayName("4. 바꿀 타이틀 null")
