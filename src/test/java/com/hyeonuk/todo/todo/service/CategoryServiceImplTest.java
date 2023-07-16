@@ -360,6 +360,7 @@ public class CategoryServiceImplTest {
          * 성공 케이스
          * 1. 카테고리 정상 삭제. 하위 todo들 모두 삭제 v
          */
+
         @Nested
         @DisplayName("success")
         public class Success {
@@ -444,7 +445,7 @@ public class CategoryServiceImplTest {
                 String message = assertThrows(ValidationException.class, () -> {
                     categoryService.delete(dto);
                 }).getMessage();
-                assertThat(message).isEqualTo("입력값을 확인해주세요");
+                assertThat(message).isEqualTo("기본 카테고리는 제거할 수 없습니다.");
             }
 
             @Test
@@ -599,7 +600,7 @@ public class CategoryServiceImplTest {
                 String message = assertThrows(ValidationException.class, () -> {
                     categoryService.update(dto);
                 }).getMessage();
-                assertThat(message).isEqualTo("입력값을 확인해주세요");
+                assertThat(message).isEqualTo("기본 카테고리의 타이틀은 변경할 수 없습니다.");
             }
             @Test
             @DisplayName("4. 바꿀 타이틀 null")

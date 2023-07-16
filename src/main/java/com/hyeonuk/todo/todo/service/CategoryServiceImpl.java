@@ -63,10 +63,13 @@ public class CategoryServiceImpl implements CategoryService{
     @Transactional
     public CategoryDeleteDTO.Response delete(CategoryDeleteDTO.Request dto) throws UserInfoNotFoundException, NotFoundException, ValidationException, CategoryException {
         try {
-            if (dto.getUserId() == null || StringUtils.isBlank(dto.getUserId()) ||
-                    dto.getCategoryId() == null) {
+            if (dto.getUserId() == null || StringUtils.isBlank(dto.getUserId())) {
                 throw new ValidationException("입력값을 확인해주세요");
             }
+            if(dto.getCategoryId() == null){
+                throw new ValidationException("기본 카테고리는 제거할 수 없습니다.");
+            }
+
             String userId = dto.getUserId();
             Long categoryId = dto.getCategoryId();
 
@@ -98,9 +101,11 @@ public class CategoryServiceImpl implements CategoryService{
     public CategoryUpdateDTO.Response update(CategoryUpdateDTO.Request dto) throws ValidationException, UserInfoNotFoundException, NotFoundException, CategoryException {
         try {
             if (dto.getUserId() == null || StringUtils.isBlank(dto.getUserId()) ||
-                    dto.getCategoryId() == null ||
                     dto.getTitle() == null || StringUtils.isBlank(dto.getTitle())) {
                 throw new ValidationException("입력값을 확인해주세요");
+            }
+            if(dto.getCategoryId() == null){
+                throw new ValidationException("기본 카테고리의 타이틀은 변경할 수 없습니다.");
             }
 
             if(dto.getTitle().length() > 100){
