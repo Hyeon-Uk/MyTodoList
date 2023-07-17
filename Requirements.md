@@ -53,7 +53,13 @@
       - 해당 계정을 3분간 Block 및 가입된 계정으로 비정상적인 접근 감지 이메일 발송
       - 서버측 로그에 Block당하기 전 마지막 접근 IP주소를 남김
   - <span id='join_nf'>회원가입</span>
-    - 회원가입 성공 시 입력받은 비밀번호를 SHA256 + SALT 단방향 암호화 알고리즘을 사용하여 저장.
-    - 해당 SALT값도 DB테이블에 저장
+    - 회원가입 성공 시 입력받은 비밀번호를 BcrypPasswordEncoder를 이용하여 저장
     - Try Count(로그인 시도 횟수)를 0, BlockTime를 null로 초기값 셋팅
     - 위의 모든 과정을 한 트랜잭션안에서 실행해야함. 하나라도 실패시 회원가입 실패(Rollback 시킴)
+- 입력값 Validation
+  - 컨트롤러 레이어에서 받아올 때 뿐만 아니라 Service레이어에서도 함께 Validation진행
+  - 파라미터를 통해 넘겨주기 전에 데이터의 변형이 일어나서 이전 Validation의 결과가 무의미해질 수 있기 때문에
+- 수정/삭제 시 유저 인증정보 확인
+  - 해당 Resource가 현재 행위를 진행하고 있는 유저 소유의 Resource인지 확인하는 Secure code 무조건 적용
+- Exception 세분화
+  - 무책임한 Exception.class Throw를 하지 않고, Custom Checked Exception을 상황에 맞게 생성하여 해당 Exception에 맞는 복구코드가 존재한다면 복구.
