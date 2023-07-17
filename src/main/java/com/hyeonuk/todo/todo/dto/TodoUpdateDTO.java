@@ -10,7 +10,7 @@ public class TodoUpdateDTO {
     @Setter
     public static class Request{
         private String userId;
-        private Long categoryId;
+        private Long todoId;
         private String content;
     }
     @Builder
@@ -19,7 +19,7 @@ public class TodoUpdateDTO {
     @Getter
     @Setter
     public static class Response{
-        private Long categoryId;
+        private Long todoId;
         private String content;
     }
 }

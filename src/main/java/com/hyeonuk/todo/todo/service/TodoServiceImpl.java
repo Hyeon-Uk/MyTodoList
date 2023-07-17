@@ -6,6 +6,7 @@ import com.hyeonuk.todo.integ.util.StringUtils;
 import com.hyeonuk.todo.member.entity.Member;
 import com.hyeonuk.todo.member.exception.UserInfoNotFoundException;
 import com.hyeonuk.todo.member.repository.MemberRepository;
+import com.hyeonuk.todo.todo.dto.TodoDeleteDTO;
 import com.hyeonuk.todo.todo.dto.TodoSaveDTO;
 import com.hyeonuk.todo.todo.dto.TodoToggleDTO;
 import com.hyeonuk.todo.todo.dto.TodoUpdateDTO;
@@ -64,12 +65,53 @@ public class TodoServiceImpl implements TodoService{
     }
 
     @Override
-    public TodoUpdateDTO.Response update(TodoUpdateDTO.Request dto) {
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public TodoUpdateDTO.Response update(TodoUpdateDTO.Request dto) throws ValidationException, UserInfoNotFoundException, TodoException, NotFoundException {
+        try {
+            String userId = dto.getUserId();
+            Long todoId = dto.getTodoId();
+            String updated = dto.getContent();
+
+            if(userId==null || StringUtils.isBlank(userId) || todoId == null){
+                throw new ValidationException("입력값을 확인해주세요");
+            }
+
+            if(updated == null || StringUtils.isBlank(updated)){
+                throw new ValidationException("변경할 Todo의 내용을 입력해주세요");
+            }
+
+            Member member = memberRepository.findById(userId)
+                    .orElseThrow(() -> new UserInfoNotFoundException("사용자 정보가 일치하지 않습니다."));
+
+            Todo todo = todoRepository.findById(todoId)
+                    .orElseThrow(() -> new NotFoundException("todo가 존재하지 않습니다."));
+
+            if(!todo.getMember().getId().equals(member.getId())){
+                throw new ValidationException("타인의 Todo는 업데이트가 불가능합니다.");
+            }
+
+            todo.updateContent(updated);
+            todoRepository.save(todo);
+
+            return TodoUpdateDTO.Response.builder()
+                    .todoId(todo.getId())
+                    .content(todo.getContent())
+                    .build();
+        } catch (ValidationException | UserInfoNotFoundException | NotFoundException e) {
+            throw e;
+        } catch(Exception e){
+            throw new TodoException("todo 업데이트 오류");
+        }
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public TodoToggleDTO.Response toggle(TodoToggleDTO.Request dto) {
         return null;
     }
 
     @Override
-    public TodoToggleDTO.Response toggle(TodoToggleDTO.Request dto) {
+    public TodoDeleteDTO.Response delete(TodoDeleteDTO.Request dto) {
         return null;
     }
 }
