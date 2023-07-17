@@ -26,6 +26,7 @@ public class CategoryServiceImpl implements CategoryService{
     private final TodoRepository todoRepository;
 
     @Override
+    @Transactional
     public CategorySaveDTO.Response save(CategorySaveDTO.Request dto) throws UserInfoNotFoundException, ValidationException, CategoryException {
         try {
             if (dto.getUserId() == null || StringUtils.isBlank(dto.getUserId()) ||
@@ -96,8 +97,8 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
+    @Transactional
     public CategoryUpdateDTO.Response update(CategoryUpdateDTO.Request dto) throws ValidationException, UserInfoNotFoundException, NotFoundException, CategoryException {
-        try {
             if (dto.getUserId() == null || StringUtils.isBlank(dto.getUserId()) ||
                     dto.getCategoryId() == null||
                     dto.getTitle() == null || StringUtils.isBlank(dto.getTitle())) {
@@ -124,16 +125,9 @@ public class CategoryServiceImpl implements CategoryService{
 
             category.updateTitle(title);
 
-            categoryRepository.save(category);
-
             return CategoryUpdateDTO.Response.builder()
                     .categoryId(categoryId)
                     .title(title)
                     .build();
-        }catch(ValidationException | UserInfoNotFoundException | NotFoundException e){
-            throw e;
-        }catch(Exception e){
-            throw new CategoryException("카테고리 수정 오류");
-        }
     }
 }
