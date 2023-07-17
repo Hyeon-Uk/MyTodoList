@@ -12,7 +12,7 @@ public interface TodoService {
 
     TodoUpdateDTO.Response update(TodoUpdateDTO.Request dto) throws ValidationException, UserInfoNotFoundException, TodoException, NotFoundException;
 
-    TodoToggleDTO.Response toggle(TodoToggleDTO.Request dto);
+    TodoToggleDTO.Response toggle(TodoToggleDTO.Request dto) throws TodoException, ValidationException, UserInfoNotFoundException, NotFoundException;
 
-    TodoDeleteDTO.Response delete(TodoDeleteDTO.Request dto);
+    TodoDeleteDTO.Response delete(TodoDeleteDTO.Request dto) throws ValidationException, UserInfoNotFoundException, NotFoundException, TodoException;
 }
