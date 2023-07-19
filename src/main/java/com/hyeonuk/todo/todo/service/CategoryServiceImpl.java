@@ -26,7 +26,7 @@ public class CategoryServiceImpl implements CategoryService{
     private final TodoRepository todoRepository;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {UserInfoNotFoundException.class, ValidationException.class, CategoryException.class})
     public CategorySaveDTO.Response save(CategorySaveDTO.Request dto) throws UserInfoNotFoundException, ValidationException, CategoryException {
         try {
             if (dto.getUserId() == null || StringUtils.isBlank(dto.getUserId()) ||
@@ -61,7 +61,7 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {UserInfoNotFoundException.class, NotFoundException.class, ValidationException.class, CategoryException.class})
     public CategoryDeleteDTO.Response delete(CategoryDeleteDTO.Request dto) throws UserInfoNotFoundException, NotFoundException, ValidationException, CategoryException {
         try {
             if (dto.getUserId() == null || StringUtils.isBlank(dto.getUserId())

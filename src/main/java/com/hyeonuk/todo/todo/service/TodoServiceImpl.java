@@ -29,7 +29,7 @@ public class TodoServiceImpl implements TodoService {
     private final CategoryRepository categoryRepository;
 
     @Override
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED,rollbackFor = {TodoException.class, ValidationException.class, UserInfoNotFoundException.class, NotFoundException.class})
     public TodoSaveDTO.Response save(TodoSaveDTO.Request dto) throws TodoException, ValidationException, UserInfoNotFoundException, NotFoundException {
         try {
             String userId = dto.getUserId();
@@ -65,7 +65,7 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED,rollbackFor = {TodoException.class, ValidationException.class, UserInfoNotFoundException.class, NotFoundException.class})
     public TodoUpdateDTO.Response update(TodoUpdateDTO.Request dto) throws ValidationException, UserInfoNotFoundException, TodoException, NotFoundException {
         try {
             String userId = dto.getUserId();
@@ -104,7 +104,7 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {TodoException.class, ValidationException.class, UserInfoNotFoundException.class, NotFoundException.class})
     public TodoToggleDTO.Response toggle(TodoToggleDTO.Request dto) throws TodoException, ValidationException, UserInfoNotFoundException, NotFoundException {
         try {
             Long todoId = dto.getTodoId();
@@ -136,7 +136,7 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {TodoException.class, ValidationException.class, UserInfoNotFoundException.class, NotFoundException.class})
     public TodoDeleteDTO.Response delete(TodoDeleteDTO.Request dto) throws ValidationException, UserInfoNotFoundException, NotFoundException, TodoException {
         try {
             Long todoId = dto.getTodoId();

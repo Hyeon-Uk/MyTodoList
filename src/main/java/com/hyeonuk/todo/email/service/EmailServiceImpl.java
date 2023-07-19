@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender javaMailSender;//이메일을 보낼 mailSender 주입
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {EmailSendException.class})
     public void sendEmail(EmailSendDTO.Request dto) throws EmailSendException {
         try{
             MimeMessage message = javaMailSender.createMimeMessage();

@@ -49,7 +49,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {ValidationException.class, LoginException.class, UserInfoNotFoundException.class})
     public LoginDTO.Response login(LoginDTO.Request dto) throws ValidationException, LoginException, UserInfoNotFoundException {
         try {
             //입력값 검증
@@ -81,7 +81,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             return LoginDTO.Response.builder()
                     .accessToken(jwtProvider.createToken(member.getId(), member.getRoles()))
                     .build();
-        } catch (LoginException | UserInfoNotFoundException | ValidationException e) {
+        } catch (UserInfoNotFoundException | ValidationException e) {
             throw e;
         } catch (Exception e) {
             throw new LoginException("로그인 오류");
@@ -118,7 +118,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {SaveException.class, AlreadyExistException.class, ValidationException.class})
     public SaveDTO.Response save(SaveDTO.Request dto) throws SaveException, AlreadyExistException, ValidationException {
         try {
             //약관동의 안했으면 throw
